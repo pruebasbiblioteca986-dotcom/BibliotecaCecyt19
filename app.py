@@ -1739,9 +1739,9 @@ IPN"""
                 if found:
                     # obtener valor actual de disponibles intentando varias claves
                     cur = None
-                    for k in ("DISPONIBLES","Disponibles","disponible","DISPONIBLE","Disponible"):
+                    for k in ("DISPONIBLES","Disponibles","disponible","DISPONIBLE"):
                         if k in found and found.get(k) not in (None, ''):
-                            cur = found.get(k)
+                            cur = extract_number(found.get(k))
                             source_key = k
                             break
                     # fallback a estructura U
@@ -1779,23 +1779,23 @@ IPN"""
 
         # libros en estantería (suma DISPONIBLES)
         libros_en_estanteria = 0
-        for it in inventario.find({}, {"_id": 0}):
+        for doc in inventario.find({}):
             v = None
-            if "DISPONIBLES" in it and it.get("DISPONIBLES") not in (None, ""):
+            if "DISPONIBLES" in doc and doc.get("DISPONIBLES") not in (None, ""):
                 try:
-                    v = int(it.get("DISPONIBLES"))
+                    v = int(doc.get("DISPONIBLES"))
                 except Exception:
                     v = None
             if v is None:
                 for k in ("Disponibles","disponibles","DISPONIBLE","Disponible"):
-                    if k in it and it.get(k) not in (None, ""):
+                    if k in doc and doc.get(k) not in (None, ""):
                         try:
-                            v = int(it.get(k)); break
+                            v = int(doc.get(k)); break
                         except Exception:
                             v = None
             if v is None:
                 try:
-                    tmp = obtener_disponibles(it)
+                    tmp = obtener_disponibles(doc)
                     if isinstance(tmp, int):
                         v = tmp
                     elif isinstance(tmp, str) and tmp.isdigit():
@@ -1896,7 +1896,7 @@ def liberar_prestamo_vencido():
     isbn = datos.get('isbn') or (datos.get('libro') or {}).get('isbn') or ''
     identificador = datos.get('id') or datos.get('boleta') or ''
     fecha_inicio = datos.get('fecha_inicio')
-    
+
     query = {"estado": "Vencido"}
     if isbn:
         query["libro.isbn"] = isbn
@@ -1943,7 +1943,6 @@ def liberar_prestamo_vencido():
                     {"ISBN": isbn_clean}, {"Isbn": isbn_clean}, {"isbn": isbn_clean}
                 ]
             })
-        
         if not encontrado and titulo_buscar:
             encontrado = inventario.find_one({
                 "$or": [
@@ -1951,7 +1950,6 @@ def liberar_prestamo_vencido():
                     {"Titulo": titulo_buscar}, {"titulo": titulo_buscar}
                 ]
             })
-        
         if encontrado:
             cur_val = None
             for k in ("DISPONIBLES","Disponibles","disponible","DISPONIBLE","Disponible"):
@@ -1975,47 +1973,7 @@ def liberar_prestamo_vencido():
             nuevo = cur_val + 1
             inventario.update_one({"_id": encontrado["_id"]}, {"$set": {"DISPONIBLES": nuevo}})
         
-        # Recalcular contadores
-        tz_mexico = pytz.timezone('America/Mexico_City')
-        start = datetime.now(tz_mexico).replace(hour=0, minute=0, second=0, microsecond=0)
-        end = start + timedelta(days=1)
-        try:
-            prestamos_hoy = prestamos.count_documents({"created_at": {"$gte": start, "$lt": end}})
-        except Exception:
-            prestamos_hoy = 0
-        
-        libros_en_estanteria = 0
-        for doc in inventario.find({}):
-            v = None
-            if "DISPONIBLES" in doc and doc.get("DISPONIBLES") not in (None, ""):
-                try:
-                    v = int(doc.get("DISPONIBLES"))
-                except Exception:
-                    v = None
-            if v is None:
-                for k in ("Disponibles","disponibles","DISPONIBLE","Disponible"):
-                    if k in doc and doc.get(k) not in (None, ""):
-                        try:
-                            v = int(doc.get(k)); break
-                        except Exception:
-                            v = None
-            if v is None:
-                try:
-                    tmp = obtener_disponibles(doc)
-                    if isinstance(tmp, int):
-                        v = tmp
-                    elif isinstance(tmp, str) and tmp.isdigit():
-                        v = int(tmp)
-                except Exception:
-                    v = None
-            if isinstance(v, int) and v > 0:
-                libros_en_estanteria += v
-        
-        return jsonify({
-            "success": True,
-            "prestamos_hoy": prestamos_hoy,
-            "libros_estanteria": libros_en_estanteria
-        })
+        return jsonify({"success": True})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -2090,7 +2048,6 @@ def liberar_multa():
                     {"ISBN": isbn_clean}, {"Isbn": isbn_clean}, {"isbn": isbn_clean}
                 ]
             })
-        
         if not encontrado and titulo_buscar:
             encontrado = inventario.find_one({
                 "$or": [
@@ -2098,7 +2055,6 @@ def liberar_multa():
                     {"Titulo": titulo_buscar}, {"titulo": titulo_buscar}
                 ]
             })
-        
         if encontrado:
             cur_val = None
             for k in ("DISPONIBLES","Disponibles","disponible","DISPONIBLE","Disponible"):
@@ -3257,17 +3213,5 @@ def tarea_periodica():
         time.sleep(86400)
 
 if __name__ == '__main__':
-    # Iniciar tarea periódica en segundo plano (se ejecutará cada 24 horas)
-    # La tarea esperará 1 hora antes de la primera ejecución para evitar envíos al iniciar
-    thread_tarea = threading.Thread(target=tarea_periodica, daemon=True)
-    thread_tarea.start()
-    print("[SISTEMA] Tarea periódica de verificación iniciada")
-    print("[SISTEMA] La primera verificación será en 1 hora, luego cada 24 horas")
-    print("[SISTEMA] Los correos se enviarán automáticamente cuando corresponda según los días restantes")
-    
-    # NO ejecutar verificación inicial al iniciar
-    # Los correos solo se enviarán:
-    # 1. Al registrar un nuevo préstamo (correo de confirmación)
-    # 2. Automáticamente cada 24 horas mediante la tarea periódica (después de 1 hora de espera inicial)
-    
-    app.run(debug=True, use_reloader=False)  # Desactivar reloader para evitar ejecuciones múltiples
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
