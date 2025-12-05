@@ -40,7 +40,7 @@ CORS(app)
 
 mongo_url = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/")
 client = MongoClient(mongo_url)
-db = client["Biblioteca"]
+db = client["Cluster0"]
 inventario = db["Inventario"]
 alumnos = db["Alumnos"]
 prestamos = db["Prestamos"]
