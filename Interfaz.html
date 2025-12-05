@@ -1,0 +1,2279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Sistema de Gestión de Biblioteca</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="Interfaz.css">
+</head>
+<body>
+    <!-- Topbar -->
+    <div class="institucional-topbar" style="display:flex;align-items:center;justify-content:space-between;background:#6d1846;padding:0.5rem 2rem;position:relative;">
+        <div style="display:flex;align-items:center;">
+            <img src="https://framework-gb.cdn.gob.mx/gobmx/img/logo_blanco.svg" alt="Gobierno de México" style="height:40px;vertical-align:middle;" />
+        </div>
+        <div style="flex:1;display:flex;justify-content:center;align-items:center;">
+            <form action="/buscar" method="get" style="max-width:900px;margin:auto;display:flex;width:100%;">
+                <input type="text" name="q" class="form-control" placeholder="Buscar por ISBN, título o usuario..." required style="flex:1;min-width:0;">
+                <button type="submit" class="btn btn-outline-secondary" style="width:48px;">
+                    <span class="material-icons">search</span>
+                </button>
+            </form>
+        </div>
+        <div class="dropdown" style="position:absolute;top:0.5rem;right:2rem;">
+            <button class="btn btn-outline-light" type="button" id="menuHamburguesa" data-bs-toggle="dropdown" style="background:transparent;border:none;color:#fff;font-size:2rem;">
+                <span class="material-icons">menu</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="menuHamburguesa">
+                <li><a class="dropdown-item" href="javascript:void(0)">Inicio</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0)">Inventario</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0)">Alumnos</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0)">Devoluciones</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0)">Docentes</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0)">Multas</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0)">Préstamos</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0)">Sitio</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0)">Informes</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0)">Registrar Usuario/Libro</a></li>
+                <li><a class="dropdown-item" href="javascript:void(0)">Ajedrez</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Encabezado institucional -->
+    <div class="institucional-header" style="width:100%;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:1.2rem 2rem;">
+        <img src="https://cecyt19.ipn.mx/assets/files/main/img/template/header/pleca-educacion.svg" alt="SEP" style="height:85px;flex:0 0 auto;" />
+        <div class="institucional-info" style="flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#6d1846;text-align:center;font-weight:bold;">
+            <div>Educación</div>
+            <div style="font-weight:bold;">Instituto Politécnico Nacional</div>
+            <div style="font-style:italic;color:#a67c52;font-weight:normal;">"La Técnica al Servicio de la Patria"</div>
+            <div style="color:#222;font-weight:500;">Centro de Estudios Científicos y Tecnológicos 19 "Leona Vicario"</div>
+        </div>
+        <img src="https://cecyt19.ipn.mx/assets/files/main/img/template/header/logo-ipn-horizontal.svg" alt="IPN" style="height:85px;flex:0 0 auto;" />
+    </div>
+
+    <div class="d-flex" id="wrapper">
+        <div class="bg-dark text-white border-right" id="sidebar-wrapper" style="width:240px;display:none;">
+            <!-- opcional sidebar -->
+        </div>
+
+        <div id="page-content-wrapper" style="flex:1;">
+            <!-- Contenido: secciones -->
+            <div id="contenido-inicio" class="contenido-seccion" style="display:block;">
+                <div class="container-fluid p-4">
+                    <h1 class="mt-4 text-center" style="color:#6d1846;">Dashboard de la Biblioteca</h1>
+                    <p class="text-center" style="color:#a67c52;font-weight:bold;">Bienvenido, personal de la biblioteca del IPN.</p>
+                    <div class="row mt-4 justify-content-center">
+                        <div class="col-lg-2 col-md-4 mb-4">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Préstamos Hoy</h5>
+                                    <p class="card-text fs-2" data-dashboard="prestamos">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 mb-4">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Libros en estantería</h5>
+                                    <p class="card-text fs-2" data-dashboard="libros">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 mb-4">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Devoluciones atrasadas</h5>
+                                    <p class="card-text fs-2 text-danger" data-dashboard="devoluciones">0</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-4 mb-4">
+                            <div class="card shadow-sm h-100">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Nuevos usuarios</h5>
+                                    <p class="card-text fs-2" data-dashboard="usuarios">0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card mt-4 shadow-sm">
+                        <div class="card-header" style="background:#6d1846;color:#fff;border-top-left-radius:10px;border-top-right-radius:10px;">
+                            <h5 class="mb-0 proximas-devoluciones-title">Próximas Devoluciones</h5>
+                        </div>
+                        <div class="card-body" id="proximas-devoluciones-lista" style="background:#6d1846;color:#fff;border-bottom-left-radius:10px;border-bottom-right-radius:10px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="contenido-inventario" class="contenido-seccion" style="display:none;">
+                <div class="container-fluid p-4 text-center">
+                    <h1 style="color:#6d1846;">Inventario</h1>
+                    <p style="color:#a67c52;font-weight:bold;">Gestión de libros y materiales de la biblioteca.</p>
+
+                    <div class="row mb-3 justify-content-center" style="max-width:920px;margin:0 auto;">
+                        <div class="col-auto"><input id="filtro-titulo" class="form-control" placeholder="Filtrar por Título" /></div>
+                        <div class="col-auto"><input id="filtro-autor" class="form-control" placeholder="Filtrar por Autor" /></div>
+                        <div class="col-auto"><input id="filtro-editorial" class="form-control" placeholder="Filtrar por Editorial" /></div>
+                        <div class="w-100"></div>
+                        <div class="col-auto"><input id="filtro-edicion" class="form-control" placeholder="Filtrar por Edición" /></div>
+                        <div class="col-auto"><input id="filtro-estante" class="form-control" placeholder="Filtrar por Estante" /></div>
+                        <div class="col-auto d-flex"><button id="btn-filtrar-inventario" class="btn btn-outline-secondary me-2">Filtrar</button><button id="btn-limpiar-inventario" class="btn btn-outline-secondary">Limpiar</button></div>
+                    </div>
+
+                    <div class="table-responsive mt-4">
+                        <div class="tabla-centro">
+                            <table class="tabla-busqueda" id="tabla-inventario">
+                                <thead>
+                                    <tr>
+                                        <th>ISBN</th>
+                                        <th>Título</th>
+                                        <th>Autor</th>
+                                        <th>Editorial</th>
+                                        <th>Edición</th>
+                                        <th>Estante</th>
+                                        <th>Disponibles</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-center align-items-center my-3" id="paginacion-inventario">
+                        <button class="btn btn-outline-secondary me-2" id="inventario-prev">&larr;</button>
+                        <span id="inventario-pagina"></span>
+                        <button class="btn btn-outline-secondary ms-2" id="inventario-next">&rarr;</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alumnos -->
+            <div id="contenido-alumnos" class="contenido-seccion" style="display:none;">
+                <div class="container-fluid p-4 text-center">
+                    <h1 style="color:#6d1846;">Alumnos</h1>
+                    <p style="color:#a67c52;font-weight:bold;">Gestión de alumnos registrados en la biblioteca.</p>
+
+                    <!-- Formulario de edición de alumno (oculto por defecto, mismos colores/diseño) -->
+                    <form id="form-editar-alumno" style="display:none;max-width:520px;margin:0 auto 1.5rem;background:#6d1846;border-radius:10px;padding:1.2rem;color:#fff;">
+                        <h5 style="text-align:left;color:#fff;margin-bottom:0.75rem;">Editar Alumno</h5>
+                        <div class="mb-2 text-start">
+                            <label class="form-label" style="font-weight:bold;">Nombre</label>
+                            <input type="text" class="form-control" name="nombre" required style="background:#fff;color:#6d1846;">
+                        </div>
+                        <div class="mb-2 text-start">
+                            <label class="form-label" style="font-weight:bold;">Boleta (identificador)</label>
+                            <input type="text" class="form-control" name="boleta" required readonly style="background:#eee;color:#6d1846;">
+                        </div>
+                        <div class="mb-2 text-start">
+                            <label class="form-label" style="font-weight:bold;">Correo</label>
+                            <input type="email" class="form-control" name="correo" style="background:#fff;color:#6d1846;">
+                        </div>
+                        <div class="mb-2 text-start">
+                            <label class="form-label" style="font-weight:bold;">Grupo</label>
+                            <input type="text" class="form-control" name="grupo" style="background:#fff;color:#6d1846;">
+                        </div>
+                        <div class="mb-2 text-start">
+                            <label class="form-label" style="font-weight:bold;">Carga</label>
+                            <select class="form-select" name="carga" style="background:#fff;color:#6d1846;">
+                                <option value="">-- Selecciona --</option>
+                                <option value="Media">Media</option>
+                                <option value="Minima">Minima</option>
+                                <option value="Completa">Completa</option>
+                            </select>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn" style="background:#fff;color:#6d1846;font-weight:bold;">Guardar cambios</button>
+                            <button type="button" id="btn-cancelar-editar" class="btn" style="background:transparent;color:#fff;border:1px solid #fff;">Cancelar</button>
+                        </div>
+                        <div id="editar-alumno-msg" class="mt-2" style="min-height:22px;color:#fff;"></div>
+                    </form>
+
+                    <div class="table-responsive mt-4">
+                        <table class="table table-bordered" id="tabla-alumnos">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th><th>Boleta</th><th>Correo</th><th>Grupo</th><th>Carga</th><th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-center align-items-center my-3" id="paginacion-alumnos">
+                        <button class="btn btn-outline-secondary me-2" id="alumnos-prev">&larr;</button>
+                        <span id="alumnos-pagina"></span>
+                        <button class="btn btn-outline-secondary ms-2" id="alumnos-next">&rarr;</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- NUEVO: Préstamos -->
+            <div id="contenido-prestamos" class="contenido-seccion" style="display:none;">
+                <div class="container-fluid p-4 text-center">
+                    <h1 style="color:#6d1846;">Préstamos</h1>
+                    <p style="color:#a67c52;font-weight:bold;">Registrar y ver préstamos actuales.</p>
+
+                    <div style="max-width:920px;margin:0 auto 1.5rem;text-align:left;">
+                        <form id="form-registro-prestamo" style="background:#6d1846;padding:1rem;border-radius:10px;color:#fff;">
+                            <div class="d-flex gap-2 mb-3">
+                                <button type="button" id="btn-tipo-alumno" class="btn" style="background:#fff;color:#6d1846;font-weight:bold;">Alumno</button>
+                                <button type="button" id="btn-tipo-docente" class="btn" style="background:transparent;color:#fff;border:1px solid #fff;">Profesor</button>
+                            </div>
+
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-3">
+                                    <label class="form-label" style="color:#fff;font-weight:bold;">ID (Boleta / No. Empleado)</label>
+                                    <input id="prestamo-id" class="form-control" placeholder="Ej. 12345678" />
+                                </div>
+                                <div class="col-md-2">
+                                    <button id="btn-buscar-persona" type="button" class="btn" style="background:#fff;color:#6d1846;font-weight:bold;">Buscar</button>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label class="form-label" style="color:#fff;font-weight:bold;">Nombre</label>
+                                    <input id="prestamo-nombre" class="form-control" readonly style="background:#fff;color:#6d1846;">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label" style="color:#fff;font-weight:bold;">Grupo / Cargo</label>
+                                    <input id="prestamo-grupo" class="form-control" readonly style="background:#fff;color:#6d1846;">
+                                </div>
+
+                                <div class="col-md-4 mt-2">
+                                    <label class="form-label" style="color:#fff;font-weight:bold;">Correo</label>
+                                    <input id="prestamo-correo" class="form-control" readonly style="background:#fff;color:#6d1846;">
+                                </div>
+
+                                <div class="col-md-4 mt-2">
+                                    <label class="form-label" style="color:#fff;font-weight:bold;">Título del libro</label>
+                                    <input id="prestamo-titulo" class="form-control" placeholder="Título del libro" />
+                                </div>
+                                <div class="col-md-3 mt-2">
+                                    <label class="form-label" style="color:#fff;font-weight:bold;">ISBN</label>
+                                    <input id="prestamo-isbn" class="form-control" placeholder="ISBN" />
+                                </div>
+
+                                <div class="col-md-5 mt-3 d-flex gap-2">
+                                    <button id="btn-registrar-prestamo" type="button" class="btn" style="background:#fff;color:#6d1846;font-weight:bold;">Registrar Préstamo</button>
+                                    <button id="btn-cancelar-prestamo" type="button" class="btn" style="background:transparent;color:#fff;border:1px solid #fff;">Cancelar</button>
+                                </div>
+
+                                <div class="col-12 mt-2">
+                                    <div id="registro-prestamo-msg" style="min-height:22px;color:#fff;"></div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="table-responsive mt-4">
+                        <table class="table table-bordered" id="tabla-prestamos">
+                            <thead style="background:#6d1846;color:#fff;">
+                                <tr>
+                                    <th>Tipo</th><th>Nombre</th><th>ID</th><th>Grupo/Cargo</th><th>Libro</th><th>ISBN</th><th>Inicio</th><th>Devolución</th><th>Estado</th><th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DOCENTES (insertar aquí) -->
+            <div id="contenido-docentes" class="contenido-seccion" style="display:none;">
+                <div class="container-fluid p-4 text-center">
+                    <h1 style="color:#6d1846;">Docentes</h1>
+                    <p style="color:#a67c52;font-weight:bold;">Listado de docentes registrados.</p>
+                    <div class="table-responsive mt-4">
+                        <table class="table table-bordered" id="tabla-docentes">
+                            <thead>
+                                <tr><th>Nombre</th><th>No. Empleado</th><th>Correo</th><th>Turno</th><th>Cargo</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="5" class="text-center">Sin datos. Haz clic en "Docentes" en el menú para cargar.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DEVOLUCIONES -->
+            <div id="contenido-devoluciones" class="contenido-seccion" style="display:none;">
+                <div class="container-fluid p-4 text-center">
+                    <h1 style="color:#6d1846;">Devoluciones</h1>
+                    <p style="color:#a67c52;font-weight:bold;">Libros pendientes de devolución (activos y vencidos).</p>
+                    <div class="table-responsive mt-4">
+                        <table class="table table-bordered" id="tabla-devoluciones">
+                            <thead style="background:#6d1846;color:#fff;">
+                                <tr>
+                                    <th>Tipo</th><th>Nombre</th><th>ID</th><th>Grupo/Cargo</th><th>Libro</th><th>ISBN</th><th>Fecha Devolución</th><th>Estado</th><th>Días Retraso</th><th>Multa</th><th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="11" class="text-center">Cargando devoluciones...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MULTAS -->
+            <div id="contenido-multas" class="contenido-seccion" style="display:none;">
+                <div class="container-fluid p-4 text-center">
+                    <h1 style="color:#6d1846;">Multas</h1>
+                    <p style="color:#a67c52;font-weight:bold;">Gestión de multas por retraso en devoluciones.</p>
+                    <div class="table-responsive mt-4">
+                        <table class="table table-bordered" id="tabla-multas">
+                            <thead style="background:#6d1846;color:#fff;">
+                                <tr>
+                                    <th>Nombre</th><th>ID</th><th>Correo</th><th>Libro</th><th>ISBN</th><th>Días Retraso</th><th>Monto</th><th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="8" class="text-center">Cargando multas...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SITIO -->
+            <div id="contenido-sitio" class="contenido-seccion" style="display:none;">
+                <div class="container-fluid p-4 text-center">
+                    <h1 style="color:#6d1846;">Registros de Sitio</h1>
+                    <p style="color:#a67c52;font-weight:bold;">Registros de entrada de alumnos y docentes al sitio.</p>
+                    
+                    <!-- Contador del día -->
+                    <div class="mt-4 mb-4" style="max-width:400px;margin:0 auto;">
+                        <div class="card" style="background:#6d1846;color:#fff;padding:1.5rem;">
+                            <h3 style="margin:0;color:#fff;">Alumnos ingresados hoy</h3>
+                            <div id="contador-sitio-dia" style="font-size:3rem;font-weight:bold;margin:0.5rem 0;">0</div>
+                            <p style="margin:0;font-size:0.9rem;opacity:0.9;">(7:00 AM - 10:00 PM)</p>
+                            <button id="btn-reiniciar-contador" class="btn mt-3" style="background:#a67c52;color:#fff;font-weight:bold;border:none;padding:8px 20px;border-radius:4px;cursor:pointer;">
+                                Reiniciar Contador del Día
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive mt-4">
+                        <table class="table table-bordered" id="tabla-sitio">
+                            <thead style="background:#6d1846;color:#fff;">
+                                <tr>
+                                    <th>Tipo</th><th>Nombre</th><th>ID/Boleta</th><th>Grupo/Cargo</th><th>Turno</th><th>Fecha</th><th>Hora</th><th>Observaciones</th><th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="9" class="text-center">Cargando registros...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AJEDREZ -->
+            <div id="contenido-ajedrez" class="contenido-seccion" style="display:none;">
+                <div class="container-fluid p-4 text-center">
+                    <h1 style="color:#6d1846;">Ajedrez</h1>
+                    <p style="color:#a67c52;font-weight:bold;">Gestión de contadores de tiempo para ajedrez (40 minutos).</p>
+                    
+                    <!-- Buscador de usuario -->
+                    <div class="mt-4" style="max-width:600px;margin:0 auto;">
+                        <div class="d-flex justify-content-center mb-3">
+                            <button id="btn-ajedrez-alumno" class="btn me-2" style="background:#6d1846;color:#fff;border:1px solid #fff;">Alumno</button>
+                            <button id="btn-ajedrez-docente" class="btn" style="background:#fff;color:#6d1846;border:1px solid #6d1846;">Docente</button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <input type="text" id="ajedrez-id-buscar" class="form-control" placeholder="Ingresa Boleta o No. Empleado" style="background:#fff;color:#6d1846;">
+                        </div>
+                        <button id="btn-ajedrez-buscar" class="btn mb-3" style="background:#6d1846;color:#fff;font-weight:bold;">Buscar Usuario</button>
+                        
+                        <div id="ajedrez-info-usuario" style="display:none;background:#6d1846;color:#fff;padding:1rem;border-radius:8px;margin-bottom:1rem;">
+                            <div class="row text-start">
+                                <div class="col-md-6 mb-2"><strong>Nombre:</strong> <span id="ajedrez-nombre"></span></div>
+                                <div class="col-md-6 mb-2"><strong>ID:</strong> <span id="ajedrez-id"></span></div>
+                                <div class="col-md-6 mb-2"><strong>Grupo:</strong> <span id="ajedrez-grupo"></span></div>
+                                <div class="col-md-6 mb-2"><strong>Carga/Turno:</strong> <span id="ajedrez-carga"></span></div>
+                                <div class="col-md-12 mb-2"><strong>Correo:</strong> <span id="ajedrez-correo"></span></div>
+                            </div>
+                            <button id="btn-ajedrez-iniciar" class="btn mt-2" style="background:#a67c52;color:#fff;font-weight:bold;">Iniciar Contador (40 min)</button>
+                        </div>
+                        
+                        <div id="ajedrez-msg" class="mt-2" style="min-height:30px;"></div>
+                    </div>
+                    
+                    <!-- Tabla de contadores activos -->
+                    <div class="table-responsive mt-4">
+                        <table class="table table-bordered" id="tabla-ajedrez">
+                            <thead style="background:#6d1846;color:#fff;">
+                                <tr>
+                                    <th>Tipo</th><th>Nombre</th><th>ID</th><th>Grupo</th><th>Carga/Turno</th><th>Tiempo Restante</th><th>Estado</th><th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="8" class="text-center">Cargando contadores...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INFORMES -->
+            <div id="contenido-informes" class="contenido-seccion" style="display:none;">
+                <div class="container-fluid p-4 text-center">
+                    <h1 style="color:#6d1846;">Informes Mensuales RMIBI</h1>
+                    <p style="color:#a67c52;font-weight:bold;">Reporte Mensual de Información Bibliotecaria Institucional</p>
+                    
+                    <!-- Selector de mes y año -->
+                    <div class="mt-4 mb-4" style="max-width:600px;margin:0 auto;">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="informe-mes" style="color:#6d1846;font-weight:bold;">Mes:</label>
+                                <select id="informe-mes" class="form-control" style="background:#fff;color:#6d1846;">
+                                    <option value="1">Enero</option>
+                                    <option value="2">Febrero</option>
+                                    <option value="3">Marzo</option>
+                                    <option value="4">Abril</option>
+                                    <option value="5">Mayo</option>
+                                    <option value="6">Junio</option>
+                                    <option value="7">Julio</option>
+                                    <option value="8">Agosto</option>
+                                    <option value="9">Septiembre</option>
+                                    <option value="10">Octubre</option>
+                                    <option value="11">Noviembre</option>
+                                    <option value="12">Diciembre</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="informe-año" style="color:#6d1846;font-weight:bold;">Año:</label>
+                                <input type="number" id="informe-año" class="form-control" min="2020" max="2100" style="background:#fff;color:#6d1846;">
+                            </div>
+                        </div>
+                        <button id="btn-cargar-informe" class="btn mb-3" style="background:#6d1846;color:#fff;font-weight:bold;">Cargar Datos del Mes</button>
+                        <button id="btn-descargar-informe" class="btn mb-3 ms-2" style="background:#a67c52;color:#fff;font-weight:bold;">Descargar Reporte Excel</button>
+                    </div>
+                    
+                    <!-- Tabla de datos del reporte -->
+                    <div class="table-responsive mt-4">
+                        <table class="table table-bordered" id="tabla-informes">
+                            <thead style="background:#6d1846;color:#fff;">
+                                <tr>
+                                    <th>Concepto</th><th>Títulos</th><th>Volúmenes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td colspan="3" class="text-center">Selecciona un mes y año, luego haz clic en "Cargar Datos del Mes"</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Información adicional -->
+                    <div class="mt-4" style="max-width:800px;margin:0 auto;">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="card" style="background:#6d1846;color:#fff;">
+                                    <div class="card-body">
+                                        <h5>Usuarios Atendidos</h5>
+                                        <p class="mb-1"><strong>Hombres:</strong> <span id="info-usuarios-hombres">-</span></p>
+                                        <p class="mb-1"><strong>Mujeres:</strong> <span id="info-usuarios-mujeres">-</span></p>
+                                        <p class="mb-0"><strong>Total:</strong> <span id="info-usuarios-total">-</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="card" style="background:#a67c52;color:#fff;">
+                                    <div class="card-body">
+                                        <h5>Usuarios Inscritos</h5>
+                                        <p class="mb-1"><strong>Hombres:</strong> <span id="info-inscritos-hombres">-</span></p>
+                                        <p class="mb-1"><strong>Mujeres:</strong> <span id="info-inscritos-mujeres">-</span></p>
+                                        <p class="mb-0"><strong>Total:</strong> <span id="info-inscritos-total">-</span></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Registrar (alumno/libro) -->
+            <div id="contenido-registrar" class="contenido-seccion" style="display:none;">
+                <div class="container-fluid p-4 text-center">
+                    <h1 style="color:#6d1846;">Registrar</h1>
+                    <p style="color:#a67c52;font-weight:bold;">Registro de nuevos alumnos, docentes o libros.</p>
+                    <div style="max-width:820px;margin:0 auto;">
+                        <div class="d-flex justify-content-center mb-4">
+                            <button id="btn-alumno" class="btn me-2" style="background:#6d1846;color:#fff;border:1px solid #fff;">Registrar Alumno</button>
+                            <button id="btn-docente" class="btn me-2" style="background:#fff;color:#6d1846;border:1px solid #6d1846;">Registrar Docente</button>
+                            <button id="btn-libro" class="btn" style="background:#fff;color:#6d1846;border:1px solid #6d1846;">Registrar Libro</button>
+                        </div>
+
+                        <form id="form-registro-alumno" style="max-width:500px;margin:auto;background:#6d1846;border-radius:10px;padding:2rem;color:#fff;">
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">Nombre del Alumno (Completo)</label>
+                                <input type="text" class="form-control" name="nombre" required style="background:#fff;color:#6d1846;">
+                            </div>
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">Boleta</label>
+                                <input type="number" class="form-control" name="boleta" required style="background:#fff;color:#6d1846;">
+                            </div>
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">Grupo</label>
+                                <input type="text" class="form-control" name="grupo" required style="background:#fff;color:#6d1846;">
+                            </div>
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">Correo</label>
+                                <input type="email" class="form-control" name="correo" required style="background:#fff;color:#6d1846;">
+                            </div>
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">Tipo de Carga (Horario)</label>
+                                <select class="form-select" name="carga" required style="background:#fff;color:#6d1846;">
+                                    <option value="">Selecciona...</option><option value="Media">Media</option><option value="Minima">Minima</option><option value="Completa">Completa</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn" style="background:#fff;color:#6d1846;font-weight:bold;width:100%;">Registrar Alumno</button>
+                            <div id="registro-alumno-msg" class="mt-3" style="min-height:22px;"></div>
+                        </form>
+
+                        <form id="form-registro-docente" style="display:none;max-width:500px;margin:auto;background:#6d1846;border-radius:10px;padding:2rem;color:#fff;">
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">Nombre del Docente (Completo)</label>
+                                <input type="text" class="form-control" name="nombre" required style="background:#fff;color:#6d1846;">
+                            </div>
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">No. Empleado</label>
+                                <input type="text" class="form-control" name="no_empleado" required style="background:#fff;color:#6d1846;">
+                            </div>
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">Correo</label>
+                                <input type="email" class="form-control" name="correo" required style="background:#fff;color:#6d1846;">
+                            </div>
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">Turno</label>
+                                <select class="form-select" name="turno" required style="background:#fff;color:#6d1846;">
+                                    <option value="">Selecciona...</option>
+                                    <option value="Matutino">Matutino</option>
+                                    <option value="Vespertino">Vespertino</option>
+                                    <option value="Nocturno">Nocturno</option>
+                                </select>
+                            </div>
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">Cargo/Ocupación</label>
+                                <input type="text" class="form-control" name="ocupacion" value="Docente" style="background:#fff;color:#6d1846;">
+                            </div>
+                            <button type="submit" class="btn" style="background:#fff;color:#6d1846;font-weight:bold;width:100%;">Registrar Docente</button>
+                            <div id="registro-docente-msg" class="mt-3" style="min-height:22px;"></div>
+                        </form>
+
+                        <form id="form-registro-libro" style="display:none;max-width:600px;margin:20px auto;background:#6d1846;border-radius:10px;padding:2rem;color:#fff;">
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">Título</label>
+                                <input type="text" class="form-control" name="titulo" required style="background:#fff;color:#6d1846;">
+                            </div>
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">Autor</label>
+                                <input type="text" class="form-control" name="autor" required style="background:#fff;color:#6d1846;">
+                            </div>
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">Editorial</label>
+                                <input type="text" class="form-control" name="editorial" style="background:#fff;color:#6d1846;">
+                            </div>
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">ISBN</label>
+                                <input type="text" class="form-control" name="isbn" style="background:#fff;color:#6d1846;">
+                            </div>
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">Edición</label>
+                                <input type="text" class="form-control" name="edicion" style="background:#fff;color:#6d1846;">
+                            </div>
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">Estante</label>
+                                <input type="text" class="form-control" name="estante" style="background:#fff;color:#6d1846;">
+                            </div>
+                            <div class="mb-3 text-start">
+                                <label class="form-label" style="font-weight:bold;">Disponibles</label>
+                                <input type="number" class="form-control" name="disponibles" min="0" value="1" style="background:#fff;color:#6d1846;">
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn" style="background:#fff;color:#6d1846;font-weight:bold;width:100%;">Registrar Libro</button>
+                                <button type="button" class="btn" id="btn-cancelar-libro" style="background:transparent;color:#fff;border:1px solid #fff;padding:10px;border-radius:6px;margin-top:8px;">Cancelar</button>
+                            </div>
+                            <div id="registro-libro-msg" class="mt-3" style="min-height:22px;"></div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div> <!-- page-content-wrapper -->
+    </div> <!-- wrapper -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+(function(){
+    // helpers
+    function showSection(id) {
+        document.querySelectorAll('.contenido-seccion').forEach(s => s.style.display = 'none');
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'block';
+    }
+
+    function normalizeField(obj, keys, fallback = '') {
+        if (!obj) return fallback;
+        for (const k of keys) if (k in obj) return obj[k];
+        return fallback;
+    }
+
+    function setText(selector, value) {
+        const el = document.querySelector(selector);
+        if (el) el.textContent = value;
+    }
+
+    // menu mapping
+    const menuMap = {
+        'inicio': 'contenido-inicio',
+        'inventario': 'contenido-inventario',
+        'alumnos': 'contenido-alumnos',
+        'devoluciones': 'contenido-devoluciones',
+        'docentes': 'contenido-docentes',
+        'multas': 'contenido-multas',
+        'préstamos': 'contenido-prestamos',
+        'sitio': 'contenido-sitio',
+        'informes': 'contenido-informes',
+        'registrar usuario': 'contenido-registrar',
+        'registrar usuario/libro': 'contenido-registrar',
+        'ajedrez': 'contenido-ajedrez'
+    };
+
+    // --- lifecycle ---
+    document.addEventListener('DOMContentLoaded', function(){
+        // dropdown navigation
+        document.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', function(e){
+                e.preventDefault();
+                const texto = (this.textContent || '').trim().toLowerCase();
+                const id = menuMap[texto];
+                if (id) {
+                    showSection(id);
+                    if (id === 'contenido-inventario') setTimeout(()=> cargarInventario(1), 150);
+                    if (id === 'contenido-alumnos') setTimeout(()=> cargarAlumnos(1), 150);
+                    if (id === 'contenido-docentes') setTimeout(()=> cargarDocentes(), 150);
+                    if (id === 'contenido-prestamos') setTimeout(()=> cargarPrestamos(), 150);
+                    if (id === 'contenido-multas') setTimeout(()=> cargarMultas(), 150);
+                    if (id === 'contenido-devoluciones') setTimeout(()=> cargarDevoluciones(), 150);
+                    if (id === 'contenido-sitio') setTimeout(()=> cargarSitio(), 150);
+                    if (id === 'contenido-ajedrez') {
+                        console.log('[AJEDREZ] Sección ajedrez seleccionada');
+                        setTimeout(()=> {
+                            console.log('[AJEDREZ] Iniciando carga...');
+                            cargarAjedrez();
+                            iniciarActualizacionAjedrez();
+                        }, 150);
+                    }
+                    if (id === 'contenido-informes') {
+                        setTimeout(()=> {
+                            // Establecer mes y año actuales
+                            const ahora = new Date();
+                            document.getElementById('informe-mes').value = ahora.getMonth() + 1;
+                            document.getElementById('informe-año').value = ahora.getFullYear();
+                        }, 150);
+                    }
+                }
+            });
+        });
+
+        // toggle register forms
+        const btnAlumno = document.getElementById('btn-alumno');
+        const btnDocente = document.getElementById('btn-docente');
+        const btnLibro = document.getElementById('btn-libro');
+        const formAlumno = document.getElementById('form-registro-alumno');
+        const formDocente = document.getElementById('form-registro-docente');
+        const formLibro = document.getElementById('form-registro-libro');
+        if (btnAlumno && btnDocente && btnLibro && formAlumno && formDocente && formLibro) {
+            btnAlumno.addEventListener('click', () => {
+                formAlumno.style.display = 'block';
+                formDocente.style.display = 'none';
+                formLibro.style.display = 'none';
+                btnAlumno.style.background = '#6d1846'; btnAlumno.style.color = '#fff';
+                btnDocente.style.background = '#fff'; btnDocente.style.color = '#6d1846';
+                btnLibro.style.background = '#fff'; btnLibro.style.color = '#6d1846';
+            });
+            btnDocente.addEventListener('click', () => {
+                formAlumno.style.display = 'none';
+                formDocente.style.display = 'block';
+                formLibro.style.display = 'none';
+                btnDocente.style.background = '#6d1846'; btnDocente.style.color = '#fff';
+                btnAlumno.style.background = '#fff'; btnAlumno.style.color = '#6d1846';
+                btnLibro.style.background = '#fff'; btnLibro.style.color = '#6d1846';
+            });
+            btnLibro.addEventListener('click', () => {
+                formAlumno.style.display = 'none';
+                formDocente.style.display = 'none';
+                formLibro.style.display = 'block';
+                btnLibro.style.background = '#6d1846'; btnLibro.style.color = '#fff';
+                btnAlumno.style.background = '#fff'; btnAlumno.style.color = '#6d1846';
+                btnDocente.style.background = '#fff'; btnDocente.style.color = '#6d1846';
+            });
+        }
+
+        // cancelar libro
+        document.getElementById('btn-cancelar-libro')?.addEventListener('click', function(){
+            if (formLibro) { formLibro.reset(); formLibro.style.display = 'none'; }
+            if (formAlumno) formAlumno.style.display = 'block';
+            const msg = document.getElementById('registro-libro-msg');
+            if (msg) msg.innerHTML = '';
+        });
+
+        // registrar docente
+        document.getElementById('form-registro-docente')?.addEventListener('submit', function(e){
+            e.preventDefault();
+            const form = e.target;
+            const datos = {
+                Nombre: form.nombre.value,
+                "No. Empleado": form.no_empleado.value,
+                Correo: form.correo.value,
+                Turno: form.turno.value,
+                Ocupacion: form.ocupacion.value
+            };
+            fetch('/api/registrar_docente', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(datos)
+            })
+            .then(res => res.json())
+            .then(data => {
+                const msg = document.getElementById('registro-docente-msg');
+                if (data && data.success) {
+                    if (msg) msg.innerHTML = '<span style="color:#fff;font-weight:bold;">¡Docente registrado!</span>';
+                    form.reset();
+                    showSection('contenido-docentes');
+                    cargarDocentes();
+                } else {
+                    if (msg) msg.innerHTML = '<span style="color:yellow;">Error: ' + (data?.error || 'no se pudo registrar') + '</span>';
+                }
+            })
+            .catch(err => {
+                console.error('Error registrar_docente:', err);
+                const msg = document.getElementById('registro-docente-msg');
+                if (msg) msg.innerHTML = '<span style="color:yellow;">Error en la petición</span>';
+            });
+        });
+
+        // registrar alumno
+        document.getElementById('form-registro-alumno')?.addEventListener('submit', function(e){
+            e.preventDefault();
+            const form = e.target;
+            const datos = {
+                Nombre: form.nombre.value,
+                Boleta: form.boleta.value,
+                Grupo: form.grupo.value,
+                Correo: form.correo.value,
+                Carga: form.carga.value
+            };
+            fetch('/api/registrar_alumno', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(datos)
+            })
+            .then(res => res.json())
+            .then(data => {
+                const msg = document.getElementById('registro-alumno-msg');
+                if (data && data.success) {
+                    if (msg) msg.innerHTML = '<span style="color:#fff;font-weight:bold;">¡Alumno registrado!</span>';
+                    form.reset();
+                    showSection('contenido-alumnos');
+                    cargarAlumnos(1);
+                } else {
+                    if (msg) msg.innerHTML = '<span style="color:yellow;">Error: ' + (data?.error || 'no se pudo registrar') + '</span>';
+                }
+            })
+            .catch(err => {
+                console.error('Error registrar_alumno:', err);
+                const msg = document.getElementById('registro-alumno-msg');
+                if (msg) msg.innerHTML = '<span style="color:yellow;">Error en la petición</span>';
+            });
+        });
+
+        // registrar libro
+        document.getElementById('form-registro-libro')?.addEventListener('submit', function(e){
+            e.preventDefault();
+            const form = e.target;
+            const datos = {
+                TITULO: form.titulo.value,
+                AUTOR: form.autor.value,
+                EDITORIAL: form.editorial.value,
+                ISBN: form.isbn.value,
+                EDICION: form.edicion.value,
+                ESTANTE: form.estante.value,
+                DISPONIBLES: parseInt(form.disponibles.value || 0, 10)
+            };
+            fetch('/api/registrar_libro', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(datos)
+            })
+            .then(res => res.json())
+            .then (data => {
+                const msg = document.getElementById('registro-libro-msg');
+                if (data && data.success) {
+                    if (msg) msg.innerHTML = '<span style="color:#fff;font-weight:bold;">¡Libro registrado!</span>';
+                    form.reset();
+                    showSection('contenido-inventario');
+                    cargarInventario(1);
+                } else {
+                    if (msg) msg.innerHTML = '<span style="color:yellow;">Error: ' + (data?.error || 'no se pudo registrar') + '</span>';
+                }
+            })
+            .catch(err => {
+                console.error('Error registrar_libro:', err);
+                const msg = document.getElementById('registro-libro-msg');
+                if (msg) msg.innerHTML = '<span style="color:yellow;">Error en la petición</span>';
+            });
+        });
+
+        // pagination buttons listeners (Alumnos / Inventario)
+        document.getElementById('alumnos-prev')?.addEventListener('click', ()=> { if (alumnosPaginaActual>1) cargarAlumnos(alumnosPaginaActual-1); });
+        document.getElementById('alumnos-next')?.addEventListener('click', ()=> { if (alumnosPaginaActual<alumnosTotalPaginas) cargarAlumnos(alumnosPaginaActual+1); });
+        document.getElementById('inventario-prev')?.addEventListener('click', ()=> { if (inventarioPaginaActual>1) cargarInventario(inventarioPaginaActual-1); });
+        document.getElementById('inventario-next')?.addEventListener('click', ()=> { if (inventarioPaginaActual<inventarioTotalPaginas) cargarInventario(inventarioPaginaActual+1); });
+        document.getElementById('btn-filtrar-inventario')?.addEventListener('click', function(e){ e.preventDefault(); cargarInventario(1); });
+        document.getElementById('btn-limpiar-inventario')?.addEventListener('click', function(e){ e.preventDefault(); ['filtro-titulo','filtro-autor','filtro-editorial','filtro-edicion','filtro-estante'].forEach(id=>{ const el=document.getElementById(id); if (el) el.value=''; }); cargarInventario(1); });
+
+        // Delegado: abrir formulario de editar alumno desde la tabla
+        document.querySelector('#tabla-alumnos tbody')?.addEventListener('click', function(e){
+            const btn = e.target.closest('.btn-editar-alumno');
+            if (!btn) return;
+            const boleta = btn.dataset.boleta;
+            // buscar los datos en la fila (alternativa: pedir al servidor por boleta)
+            const tr = btn.closest('tr');
+            const cols = tr ? tr.querySelectorAll('td') : null;
+            const nombre = cols && cols[0] ? cols[0].textContent.trim() : '';
+            const correo = cols && cols[2] ? cols[2].textContent.trim() : '';
+            const grupo = cols && cols[3] ? cols[3].textContent.trim() : '';
+            const carga = cols && cols[4] ? cols[4].textContent.trim() : '';
+
+            const formEdit = document.getElementById('form-editar-alumno');
+            if (!formEdit) return;
+            formEdit.nombre.value = nombre;
+            formEdit.boleta.value = boleta;
+            formEdit.correo.value = correo;
+            formEdit.grupo.value = grupo;
+            formEdit.carga.value = carga || '';
+
+            document.getElementById('editar-alumno-msg').textContent = '';
+            formEdit.style.display = 'block';
+            // scroll to form (optional)
+            formEdit.scrollIntoView({behavior:'smooth', block:'center'});
+        });
+
+        // cancelar edición
+        document.getElementById('btn-cancelar-editar')?.addEventListener('click', function(){
+            const f = document.getElementById('form-editar-alumno');
+            if (f) { f.reset(); f.style.display = 'none'; }
+        });
+
+        // enviar cambios de alumno
+        document.getElementById('form-editar-alumno')?.addEventListener('submit', function(e){
+            e.preventDefault();
+            const form = e.target;
+            const payload = {
+                Nombre: form.nombre.value,
+                Boleta: form.boleta.value,
+                Correo: form.correo.value,
+                Grupo: form.grupo.value,
+                Carga: form.carga.value
+            };
+            fetch('/api/actualizar_alumno', {   // implementa este endpoint en backend
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                const msg = document.getElementById('editar-alumno-msg');
+                if (data && data.success) {
+                    if (msg) msg.innerHTML = '<span style="color:#fff;font-weight:bold;">¡Alumno actualizado!</span>';
+                    form.reset();
+                    form.style.display = 'none';
+                    // recargar página actual de alumnos
+                    cargarAlumnos(alumnosPaginaActual || 1);
+                } else {
+                    if (msg) msg.innerHTML = '<span style="color:yellow;">Error: ' + (data?.error || 'no se pudo actualizar') + '</span>';
+                }
+            })
+            .catch(err => {
+                console.error('Error actualizar_alumno:', err);
+                const msg = document.getElementById('editar-alumno-msg');
+                if (msg) msg.innerHTML = '<span style="color:yellow;">Error en la petición</span>';
+            });
+        });
+
+        // --- PRÉSTAMOS (UI + lógica) ---
+        let prestamosTipo = 'alumno'; // 'alumno' | 'docente'
+        document.getElementById('btn-tipo-alumno')?.addEventListener('click', function(){
+            prestamosTipo = 'alumno';
+            this.style.background = '#fff'; this.style.color = '#6d1846';
+            document.getElementById('btn-tipo-docente').style.background = 'transparent';
+            document.getElementById('btn-tipo-docente').style.color = '#fff';
+        });
+        document.getElementById('btn-tipo-docente')?.addEventListener('click', function(){
+            prestamosTipo = 'docente';
+            this.style.background = '#fff'; this.style.color = '#6d1846';
+            document.getElementById('btn-tipo-alumno').style.background = 'transparent';
+            document.getElementById('btn-tipo-alumno').style.color = '#fff';
+        });
+
+        function addBusinessDays(d, days) { 
+        }
+        function formatISO(d) {
+            const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+            return `${y}-${m}-${day}`;
+        }
+
+        document.getElementById('btn-buscar-persona')?.addEventListener('click', async function(){
+            const id = (document.getElementById('prestamo-id')?.value || '').trim();
+            if (!id) { 
+                document.getElementById('registro-prestamo-msg').textContent = 'Ingresa Boleta o No. Empleado';
+                return; 
+            }
+            document.getElementById('registro-prestamo-msg').textContent = 'Buscando...';
+            try {
+                if (prestamosTipo === 'alumno') {
+                    // Usar endpoint específico de búsqueda por boleta
+                    const res = await fetch(`/api/buscar_alumno?boleta=${encodeURIComponent(id)}`);
+                    if (!res.ok) {
+                        throw new Error('HTTP ' + res.status);
+                    }
+                    const data = await res.json();
+                    if (data && data.encontrado) {
+                        document.getElementById('prestamo-nombre').value = data.Nombre || '';
+                        document.getElementById('prestamo-grupo').value = data.Grupo || '';
+                        document.getElementById('prestamo-correo').value = data.Correo || '';
+                        document.getElementById('registro-prestamo-msg').textContent = '';
+                    } else {
+                        document.getElementById('registro-prestamo-msg').textContent = 'Alumno no encontrado. Verifica la boleta.';
+                    }
+                } else {
+                    // Usar endpoint específico de búsqueda por número de empleado
+                    const res = await fetch(`/api/buscar_docente?no_empleado=${encodeURIComponent(id)}`);
+                    if (!res.ok) {
+                        throw new Error('HTTP ' + res.status);
+                    }
+                    const data = await res.json();
+                    if (data && data.encontrado) {
+                        document.getElementById('prestamo-nombre').value = data.Nombre || '';
+                        document.getElementById('prestamo-grupo').value = data.Ocupacion || '';
+                        document.getElementById('prestamo-correo').value = data.Correo || '';
+                        document.getElementById('registro-prestamo-msg').textContent = '';
+                    } else {
+                        document.getElementById('registro-prestamo-msg').textContent = 'Profesor no encontrado. Verifica el número de empleado.';
+                    }
+                }
+            } catch (err) {
+                console.error('Error buscar persona:', err);
+                document.getElementById('registro-prestamo-msg').textContent = 'Error al buscar persona. Revisa la consola (F12).';
+            }
+        });
+
+        document.getElementById('btn-cancelar-prestamo')?.addEventListener('click', function(){
+            document.getElementById('form-registro-prestamo')?.reset();
+            document.getElementById('registro-prestamo-msg').textContent = '';
+            // mantener tipo visual
+            if (prestamosTipo === 'alumno') document.getElementById('btn-tipo-alumno').click();
+            else document.getElementById('btn-tipo-docente').click();
+        });
+
+        document.getElementById('btn-registrar-prestamo')?.addEventListener('click', async function(){
+            const id = (document.getElementById('prestamo-id')?.value || '').trim();
+            const nombre = (document.getElementById('prestamo-nombre')?.value || '').trim();
+            const grupo = (document.getElementById('prestamo-grupo')?.value || '').trim();
+            const correo = (document.getElementById('prestamo-correo')?.value || '').trim();
+            const titulo = (document.getElementById('prestamo-titulo')?.value || '').trim();
+            const isbn = (document.getElementById('prestamo-isbn')?.value || '').trim();
+            const tipo = (typeof prestamosTipo !== 'undefined') ? prestamosTipo : 'alumno';
+
+            if (!id || !nombre || !titulo) {
+                document.getElementById('registro-prestamo-msg').textContent = 'Completa ID, Nombre y Título antes de registrar.';
+                return;
+            }
+
+            const payload = {
+                tipo: tipo,
+                id: id,
+                nombre: nombre,
+                grupo: grupo,
+                correo: correo,
+                libro: { titulo: titulo, isbn: isbn }
+            };
+
+            try {
+                const res = await fetch('/api/registrar_prestamo', {
+                    method: 'POST',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify(payload)
+                });
+
+                // si el servidor respondió mal, mostrar error
+                if (!res.ok) {
+                    const txt = await res.text().catch(()=>res.statusText);
+                    document.getElementById('registro-prestamo-msg').innerHTML = '<span style="color:yellow;">Error servidor: '+res.status+' '+txt+'</span>';
+                    return;
+                }
+
+                const data = await res.json().catch(()=>null);
+                if (data && data.success) {
+                    // mensaje y limpieza
+                    document.getElementById('registro-prestamo-msg').innerHTML = '<span style="color:#fff;font-weight:bold;">Préstamo registrado.</span>';
+                    ['prestamo-id','prestamo-nombre','prestamo-grupo','prestamo-correo','prestamo-titulo','prestamo-isbn'].forEach(idc=>{ const el=document.getElementById(idc); if(el) el.value=''; });
+
+                    // recargar tabla de préstamos
+                    if (typeof cargarPrestamos === 'function') cargarPrestamos();
+
+                    // actualizar dashboard si el backend devolvió los contadores
+                    try {
+                        if (data.prestamos_hoy !== undefined) setText('.card-text.fs-2[data-dashboard="prestamos"]', data.prestamos_hoy);
+                        if (data.libros_estanteria !== undefined) setText('.card-text.fs-2[data-dashboard="libros"]', data.libros_estanteria);
+                        if (data.devoluciones_atrasadas !== undefined) setText('.card-text.fs-2[data-dashboard="devoluciones"]', data.devoluciones_atrasadas);
+                        if (data.nuevos_usuarios !== undefined) setText('.card-text.fs-2[data-dashboard="usuarios"]', data.nuevos_usuarios);
+                    } catch(e){ console.warn('No se pudo actualizar dashboard por JS', e); }
+
+                    // actualizar fila del inventario si coincide el ISBN y el backend devolvió nuevo valor
+                    try {
+                        if (isbn) {
+                            const tbody = document.querySelector('#tabla-inventario tbody');
+                            let updated = false;
+                            if (tbody) {
+                                const rows = Array.from(tbody.querySelectorAll('tr'));
+                                const normIsbn = isbn.replace(/\s|-/g,'').toLowerCase();
+                                for (const r of rows) {
+                                    const cell = r.querySelector('td');
+                                    if (!cell) continue;
+                                    const cellIsbn = String(cell.textContent || '').replace(/\s|-/g,'').toLowerCase();
+                                    if (cellIsbn === normIsbn) {
+                                        // columna disponibles es la última (7ª)
+                                        const cols = r.querySelectorAll('td');
+                                        const dispCol = cols[cols.length-1];
+                                        if (dispCol) {
+                                            if (data.nuevo_disponibles !== undefined) dispCol.textContent = String(data.nuevo_disponibles);
+                                            else {
+                                                // fallback: restar 1 del valor actual
+                                                const cur = parseInt(String(dispCol.textContent||'0').replace(/\D+/g,''),10) || 0;
+                                                dispCol.textContent = String(Math.max(0, cur-1));
+                                            }
+                                        }
+                                        updated = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            // si no encontró la fila, recarga inventario para garantizar consistencia
+                            if (!updated && typeof cargarInventario === 'function') {
+                                setTimeout(()=> cargarInventario(inventarioPaginaActual || 1), 300);
+                            }
+                        }
+                    } catch(err){ console.warn('Error actualizando inventario en UI', err); }
+
+                } else {
+                    document.getElementById('registro-prestamo-msg').innerHTML = '<span style="color:yellow;">Error: '+(data?.error||'no se pudo registrar')+'</span>';
+                }
+            } catch (err) {
+                console.error('Error registrar_prestamo:', err);
+                document.getElementById('registro-prestamo-msg').innerHTML = '<span style="color:yellow;">Error en la petición</span>';
+            }
+        });
+
+        async function cargarPrestamos() {
+            try {
+                const res = await fetch('/api/prestamos');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                const tbody = document.querySelector('#tabla-prestamos tbody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+                const items = Array.isArray(data) ? data : (data.prestamos || []);
+                if (!items.length) {
+                    tbody.innerHTML = '<tr><td colspan="10" class="text-center" style="color:#6d1846;">No hay préstamos activos.</td></tr>';
+                    return;
+                }
+                items.forEach(it => {
+                    const tipo = it.tipo || it.tipo_persona || 'alumno';
+                    const nombre = it.nombre || it.Nombre || '';
+                    const idv = it.id || it.boleta || it.no_empleado || '';
+                    const grupo = it.grupo || it.cargo || '';
+                    const libro = (it.libro && (it.libro.titulo || it.libro.title)) || it.titulo || '';
+                    const isbn = (it.libro && (it.libro.isbn)) || it.ISBN || '';
+                    const inicio = it.fecha_inicio || it.fechaInicio || it.inicio || '';
+                    const devol = it.fecha_devolucion || it.fechaDevolucion || it.devolucion || '';
+                    const estado = it.estado || (new Date(devol) < new Date() ? 'Vencido' : 'Activo');
+                    // Construir fila con botón según estado
+                    let botonAccion = '';
+                    if (estado === 'Vencido') {
+                        botonAccion = `<button class="btn btn-sm btn-liberar-prestamo-vencido" 
+                                    data-isbn="${isbn || ''}" 
+                                    data-id="${idv || ''}" 
+                                    data-fecha="${inicio || ''}"
+                                    data-titulo="${libro || ''}"
+                                    style="background:#a67c52;color:#fff;border:1px solid #fff;padding:0.18rem 0.5rem;cursor:pointer;">Liberado</button>`;
+                    } else if (estado === 'Activo') {
+                        botonAccion = `<button class="btn btn-sm btn-eliminar-prestamo" 
+                                    data-isbn="${isbn || ''}" 
+                                    data-id="${idv || ''}" 
+                                    data-fecha="${inicio || ''}"
+                                    data-titulo="${libro || ''}"
+                                    style="background:#6d1846;color:#fff;border:1px solid #fff;padding:0.18rem 0.5rem;cursor:pointer;">Eliminar</button>`;
+                    }
+                    
+                    tbody.innerHTML += `<tr>
+                        <td>${tipo}</td>
+                        <td>${nombre}</td>
+                        <td>${idv}</td>
+                        <td>${grupo}</td>
+                        <td>${libro}</td>
+                        <td>${isbn}</td>
+                        <td>${inicio}</td>
+                        <td>${devol}</td>
+                        <td>${estado}</td>
+                        <td>${botonAccion}</td>
+                    </tr>`;
+                });
+            } catch (err) {
+                console.error('Error cargarPrestamos', err);
+                const tbody = document.querySelector('#tabla-prestamos tbody');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="10" class="text-center text-danger">Error al cargar préstamos.</td></tr>';
+            }
+        }
+
+        // Función para cargar devoluciones
+        async function cargarDevoluciones() {
+            try {
+                const res = await fetch('/api/devoluciones');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                const tbody = document.querySelector('#tabla-devoluciones tbody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+                const items = Array.isArray(data) ? data : (data.devoluciones || []);
+                if (!items.length) {
+                    tbody.innerHTML = '<tr><td colspan="11" class="text-center" style="color:#6d1846;">No hay devoluciones pendientes.</td></tr>';
+                    return;
+                }
+                items.forEach(it => {
+                    const tipo = it.tipo || 'alumno';
+                    const nombre = it.nombre || '';
+                    const idv = it.id || '';
+                    const grupo = it.grupo || '';
+                    const libro = (it.libro && (it.libro.titulo || it.libro.title)) || '';
+                    const isbn = (it.libro && (it.libro.isbn)) || '';
+                    const fechaDev = it.fecha_devolucion || '';
+                    const estado = it.estado || 'Activo';
+                    const diasRetraso = it.dias_retraso || 0;
+                    const montoMulta = it.monto_multa || 0;
+                    
+                    // Determinar botón según estado
+                    let botonAccion = '';
+                    if (estado === 'Vencido') {
+                        botonAccion = `<button class="btn btn-sm btn-liberar-devolucion" 
+                                    data-isbn="${isbn || ''}" 
+                                    data-id="${idv || ''}" 
+                                    data-fecha="${it.fecha_inicio || ''}"
+                                    data-titulo="${libro || ''}"
+                                    style="background:#a67c52;color:#fff;border:1px solid #fff;padding:0.18rem 0.5rem;cursor:pointer;">Liberado</button>`;
+                    } else if (estado === 'Activo') {
+                        botonAccion = `<button class="btn btn-sm btn-eliminar-devolucion" 
+                                    data-isbn="${isbn || ''}" 
+                                    data-id="${idv || ''}" 
+                                    data-fecha="${it.fecha_inicio || ''}"
+                                    data-titulo="${libro || ''}"
+                                    style="background:#6d1846;color:#fff;border:1px solid #fff;padding:0.18rem 0.5rem;cursor:pointer;">Eliminar</button>`;
+                    }
+                    
+                    tbody.innerHTML += `<tr>
+                        <td>${tipo}</td>
+                        <td>${nombre}</td>
+                        <td>${idv}</td>
+                        <td>${grupo}</td>
+                        <td>${libro}</td>
+                        <td>${isbn}</td>
+                        <td>${fechaDev}</td>
+                        <td>${estado}</td>
+                        <td>${diasRetraso > 0 ? diasRetraso : '-'}</td>
+                        <td>${montoMulta > 0 ? '$' + montoMulta.toFixed(2) : '-'}</td>
+                        <td>${botonAccion}</td>
+                    </tr>`;
+                });
+            } catch (err) {
+                console.error('Error cargarDevoluciones', err);
+                const tbody = document.querySelector('#tabla-devoluciones tbody');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="11" class="text-center text-danger">Error al cargar devoluciones.</td></tr>';
+            }
+        }
+
+        // Función para cargar registros de sitio
+        async function cargarSitio() {
+            try {
+                const res = await fetch('/api/sitio');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                const tbody = document.querySelector('#tabla-sitio tbody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+                
+                // Actualizar contador del día
+                const contadorDia = document.getElementById('contador-sitio-dia');
+                if (contadorDia) {
+                    contadorDia.textContent = data.contador_dia || 0;
+                }
+                
+                const items = Array.isArray(data) ? data : (data.registros || []);
+                if (!items.length) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="color:#6d1846;">No hay registros de entrada.</td></tr>';
+                    return;
+                }
+                items.forEach(it => {
+                    const tipo = it.tipo || '';
+                    const nombre = it.nombre || '';
+                    const identificador = it.identificador || '';
+                    const grupo = it.grupo || '';
+                    const turno = it.turno || '';
+                    const fecha = it.fecha || '';
+                    const hora = it.hora_entrada || '';
+                    const observaciones = Array.isArray(it.observaciones) ? it.observaciones : [];
+                    const registroId = it._id || it.id || '';
+                    
+                    // Formatear observaciones
+                    let obsTexto = '';
+                    if (observaciones.length > 0) {
+                        obsTexto = observaciones.map(obs => {
+                            const fechaObs = obs.fecha || '';
+                            const horaObs = obs.hora || '';
+                            const textoObs = obs.texto || '';
+                            return `${fechaObs} ${horaObs}: ${textoObs}`;
+                        }).join(' | ');
+                    } else {
+                        obsTexto = '-';
+                    }
+                    
+                    tbody.innerHTML += `<tr>
+                        <td>${tipo === 'alumno' ? 'Alumno' : 'Docente'}</td>
+                        <td>${nombre}</td>
+                        <td>${identificador}</td>
+                        <td>${grupo}</td>
+                        <td>${turno}</td>
+                        <td>${fecha}</td>
+                        <td>${hora}</td>
+                        <td style="max-width:300px;word-wrap:break-word;font-size:0.9rem;">${obsTexto}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger eliminar-registro-sitio" data-id="${registroId}" style="background:#dc3545;color:#fff;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;">
+                                Eliminar
+                            </button>
+                        </td>
+                    </tr>`;
+                });
+                
+                // Agregar event listeners a los botones eliminar
+                document.querySelectorAll('.eliminar-registro-sitio').forEach(btn => {
+                    btn.addEventListener('click', async function() {
+                        const id = this.getAttribute('data-id');
+                        if (!id) return;
+                        
+                        if (!confirm('¿Estás seguro de eliminar este registro de la tabla? (Se mantendrá en el conteo del día)')) {
+                            return;
+                        }
+                        
+                        try {
+                            const res = await fetch('/api/sitio/eliminar', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({id: id})
+                            });
+                            
+                            if (!res.ok) throw new Error('HTTP ' + res.status);
+                            const data = await res.json();
+                            
+                            if (data.success) {
+                                alert('Registro eliminado de la tabla (se mantiene en el conteo)');
+                                cargarSitio(); // Recargar tabla
+                            } else {
+                                alert('Error: ' + (data.error || 'No se pudo eliminar'));
+                            }
+                        } catch (err) {
+                            console.error('Error eliminar registro sitio:', err);
+                            alert('Error al eliminar registro');
+                        }
+                    });
+                });
+            } catch (err) {
+                console.error('Error cargarSitio', err);
+                const tbody = document.querySelector('#tabla-sitio tbody');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="9" class="text-center text-danger">Error al cargar registros.</td></tr>';
+            }
+        }
+        
+        // Event listener para botón reiniciar contador
+        document.getElementById('btn-reiniciar-contador')?.addEventListener('click', async function() {
+            if (!confirm('¿Estás seguro de reiniciar el contador del día? Esto marcará todos los registros del día como eliminados de la tabla (se mantendrán en el conteo histórico).')) {
+                return;
+            }
+            
+            try {
+                const res = await fetch('/api/sitio/reiniciar-contador', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+                
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                
+                if (data.success) {
+                    alert('Contador del día reiniciado correctamente');
+                    cargarSitio(); // Recargar tabla y contador
+                } else {
+                    alert('Error: ' + (data.error || 'No se pudo reiniciar el contador'));
+                }
+            } catch (err) {
+                console.error('Error reiniciar contador:', err);
+                alert('Error al reiniciar el contador');
+            }
+        });
+
+        // Variables para ajedrez
+        let ajedrezTipoActual = 'alumno';
+        let intervaloAjedrez = null;
+        let usuarioAjedrezEncontrado = null;
+
+        // Función para cargar contadores de ajedrez
+        async function cargarAjedrez() {
+            console.log('[AJEDREZ] Cargando contadores...');
+            try {
+                const res = await fetch('/api/ajedrez');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                const tbody = document.querySelector('#tabla-ajedrez tbody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+                const items = Array.isArray(data) ? data : (data.contadores || []);
+                console.log('[AJEDREZ] Contadores encontrados:', items.length);
+                if (!items.length) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center" style="color:#6d1846;">No hay contadores activos.</td></tr>';
+                    // Iniciar actualización periódica aunque no haya contadores
+                    iniciarActualizacionAjedrez();
+                    return;
+                }
+                items.forEach(it => {
+                    const tipo = it.tipo || '';
+                    const nombre = it.nombre || '';
+                    const idv = it.id || '';
+                    const grupo = it.grupo || '';
+                    const carga = it.carga || '';
+                    const tiempo = it.tiempo_formato || '00:00';
+                    const estado = it.estado || 'activo';
+                    const segundos = it.tiempo_restante_segundos || 0;
+                    
+                    // Determinar botones según estado
+                    let botonesAccion = '';
+                    if (estado === 'finalizado') {
+                        botonesAccion = `
+                            <button class="btn btn-sm btn-ajedrez-reiniciar me-1" data-id="${idv}" style="background:#a67c52;color:#fff;border:1px solid #fff;padding:0.18rem 0.5rem;cursor:pointer;">Reiniciar</button>
+                            <button class="btn btn-sm btn-ajedrez-eliminar" data-id="${idv}" style="background:#dc3545;color:#fff;border:1px solid #fff;padding:0.18rem 0.5rem;cursor:pointer;">Eliminar</button>
+                        `;
+                    } else if (estado === 'activo') {
+                        botonesAccion = `
+                            <button class="btn btn-sm btn-ajedrez-terminar me-1" data-id="${idv}" style="background:#6d1846;color:#fff;border:1px solid #fff;padding:0.18rem 0.5rem;cursor:pointer;">Terminar</button>
+                            <button class="btn btn-sm btn-ajedrez-eliminar" data-id="${idv}" style="background:#dc3545;color:#fff;border:1px solid #fff;padding:0.18rem 0.5rem;cursor:pointer;">Eliminar</button>
+                        `;
+                    }
+                    
+                    // Color del tiempo según estado
+                    let colorTiempo = '#6d1846';
+                    if (segundos <= 60) colorTiempo = '#dc3545'; // Rojo si queda menos de 1 minuto
+                    else if (segundos <= 300) colorTiempo = '#ffc107'; // Amarillo si queda menos de 5 minutos
+                    
+                    tbody.innerHTML += `<tr>
+                        <td>${tipo === 'alumno' ? 'Alumno' : 'Docente'}</td>
+                        <td>${nombre}</td>
+                        <td>${idv}</td>
+                        <td>${grupo}</td>
+                        <td>${carga}</td>
+                        <td style="font-weight:bold;font-size:1.2rem;color:${colorTiempo};" data-segundos="${segundos}">${tiempo}</td>
+                        <td>${estado === 'finalizado' ? '⏰ Finalizado' : '▶️ Activo'}</td>
+                        <td>${botonesAccion}</td>
+                    </tr>`;
+                });
+            } catch (err) {
+                console.error('Error cargarAjedrez', err);
+                const tbody = document.querySelector('#tabla-ajedrez tbody');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error al cargar contadores.</td></tr>';
+            }
+        }
+
+        // Función para actualizar contadores en tiempo real
+        function iniciarActualizacionAjedrez() {
+            // Limpiar intervalo anterior si existe
+            if (intervaloAjedrez) {
+                clearInterval(intervaloAjedrez);
+            }
+            
+            // Actualizar cada segundo
+            intervaloAjedrez = setInterval(() => {
+                const tbody = document.querySelector('#tabla-ajedrez tbody');
+                if (!tbody) {
+                    console.log('[AJEDREZ] tbody no encontrado, deteniendo actualización');
+                    return;
+                }
+                
+                const filas = tbody.querySelectorAll('tr');
+                let hayActivos = false;
+                
+                filas.forEach(fila => {
+                    const celdaTiempo = fila.querySelector('td[data-segundos]');
+                    if (!celdaTiempo) return;
+                    
+                    let segundos = parseInt(celdaTiempo.getAttribute('data-segundos') || '0', 10);
+                    if (segundos > 0) {
+                        hayActivos = true;
+                        segundos -= 1;
+                        celdaTiempo.setAttribute('data-segundos', segundos);
+                        
+                        const minutos = Math.floor(segundos / 60);
+                        const segs = segundos % 60;
+                        const tiempoFormato = `${String(minutos).padStart(2, '0')}:${String(segs).padStart(2, '0')}`;
+                        celdaTiempo.textContent = tiempoFormato;
+                        
+                        // Cambiar color según tiempo restante
+                        if (segundos <= 60) {
+                            celdaTiempo.style.color = '#dc3545';
+                        } else if (segundos <= 300) {
+                            celdaTiempo.style.color = '#ffc107';
+                        } else {
+                            celdaTiempo.style.color = '#6d1846';
+                        }
+                        
+                        // Si llegó a 0, mostrar alerta
+                        if (segundos === 0) {
+                            const nombre = fila.querySelector('td:nth-child(2)')?.textContent || 'Usuario';
+                            alert(`⏰ Tiempo finalizado para ${nombre}`);
+                            // Recargar tabla para actualizar estado
+                            cargarAjedrez();
+                        }
+                    }
+                });
+                
+                // Si no hay activos, actualizar desde servidor cada 5 segundos
+                if (!hayActivos) {
+                    clearInterval(intervaloAjedrez);
+                    intervaloAjedrez = setInterval(() => cargarAjedrez(), 5000);
+                }
+            }, 1000);
+        }
+
+        // Event listeners para ajedrez
+        document.getElementById('btn-ajedrez-alumno')?.addEventListener('click', function(){
+            ajedrezTipoActual = 'alumno';
+            this.style.background = '#6d1846';
+            this.style.color = '#fff';
+            document.getElementById('btn-ajedrez-docente').style.background = '#fff';
+            document.getElementById('btn-ajedrez-docente').style.color = '#6d1846';
+            document.getElementById('ajedrez-id-buscar').placeholder = 'Ingresa Boleta';
+        });
+
+        document.getElementById('btn-ajedrez-docente')?.addEventListener('click', function(){
+            ajedrezTipoActual = 'docente';
+            this.style.background = '#6d1846';
+            this.style.color = '#fff';
+            document.getElementById('btn-ajedrez-alumno').style.background = '#fff';
+            document.getElementById('btn-ajedrez-alumno').style.color = '#6d1846';
+            document.getElementById('ajedrez-id-buscar').placeholder = 'Ingresa No. Empleado';
+        });
+
+        document.getElementById('btn-ajedrez-buscar')?.addEventListener('click', async function(){
+            const id = document.getElementById('ajedrez-id-buscar')?.value.trim();
+            if (!id) {
+                document.getElementById('ajedrez-msg').textContent = 'Ingresa Boleta o No. Empleado';
+                return;
+            }
+            
+            document.getElementById('ajedrez-msg').textContent = 'Buscando...';
+            try {
+                const res = await fetch(`/api/ajedrez/buscar_usuario?id=${encodeURIComponent(id)}&tipo=${ajedrezTipoActual}`);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                
+                if (data && data.encontrado) {
+                    usuarioAjedrezEncontrado = data;
+                    document.getElementById('ajedrez-nombre').textContent = data.nombre || '';
+                    document.getElementById('ajedrez-id').textContent = data.id || '';
+                    document.getElementById('ajedrez-grupo').textContent = data.grupo || '';
+                    document.getElementById('ajedrez-carga').textContent = data.carga || '';
+                    document.getElementById('ajedrez-correo').textContent = data.correo || '';
+                    document.getElementById('ajedrez-info-usuario').style.display = 'block';
+                    document.getElementById('ajedrez-msg').textContent = '';
+                } else {
+                    document.getElementById('ajedrez-msg').textContent = 'Usuario no encontrado. Verifica el ID.';
+                    document.getElementById('ajedrez-info-usuario').style.display = 'none';
+                }
+            } catch (err) {
+                console.error('Error buscar usuario ajedrez:', err);
+                document.getElementById('ajedrez-msg').textContent = 'Error al buscar usuario.';
+            }
+        });
+
+        document.getElementById('btn-ajedrez-iniciar')?.addEventListener('click', async function(){
+            if (!usuarioAjedrezEncontrado) {
+                alert('Primero busca un usuario');
+                return;
+            }
+            
+            const btn = this;
+            btn.disabled = true;
+            btn.textContent = 'Iniciando...';
+            
+            try {
+                const res = await fetch('/api/ajedrez/iniciar', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(usuarioAjedrezEncontrado)
+                });
+                
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                
+                if (data && data.success) {
+                    document.getElementById('ajedrez-msg').innerHTML = '<span style="color:#28a745;font-weight:bold;">Contador iniciado exitosamente (40 minutos)</span>';
+                    document.getElementById('ajedrez-id-buscar').value = '';
+                    document.getElementById('ajedrez-info-usuario').style.display = 'none';
+                    usuarioAjedrezEncontrado = null;
+                    cargarAjedrez();
+                    iniciarActualizacionAjedrez();
+                } else {
+                    alert('Error: ' + (data?.error || 'No se pudo iniciar el contador'));
+                }
+            } catch (err) {
+                console.error('Error iniciar contador:', err);
+                alert('Error al iniciar contador');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Iniciar Contador (40 min)';
+            }
+        });
+
+        // Event listeners para botones en tabla de ajedrez
+        document.querySelector('#tabla-ajedrez tbody')?.addEventListener('click', async function(e){
+            const btnTerminar = e.target.closest('.btn-ajedrez-terminar');
+            if (btnTerminar) {
+                const id = btnTerminar.dataset.id;
+                if (!confirm('¿Terminar este contador?')) return;
+                btnTerminar.disabled = true;
+                try {
+                    const res = await fetch('/api/ajedrez/terminar', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({id: id})
+                    });
+                    if (res.ok) {
+                        cargarAjedrez();
+                        iniciarActualizacionAjedrez();
+                    } else {
+                        alert('Error al terminar contador');
+                    }
+                } catch (err) {
+                    alert('Error al terminar contador');
+                } finally {
+                    btnTerminar.disabled = false;
+                }
+                return;
+            }
+            
+            const btnReiniciar = e.target.closest('.btn-ajedrez-reiniciar');
+            if (btnReiniciar) {
+                const id = btnReiniciar.dataset.id;
+                if (!confirm('¿Reiniciar contador con 40 minutos nuevos?')) return;
+                btnReiniciar.disabled = true;
+                try {
+                    const res = await fetch('/api/ajedrez/reiniciar', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({id: id})
+                    });
+                    if (res.ok) {
+                        cargarAjedrez();
+                        iniciarActualizacionAjedrez();
+                    } else {
+                        alert('Error al reiniciar contador');
+                    }
+                } catch (err) {
+                    alert('Error al reiniciar contador');
+                } finally {
+                    btnReiniciar.disabled = false;
+                }
+                return;
+            }
+            
+            const btnEliminar = e.target.closest('.btn-ajedrez-eliminar');
+            if (btnEliminar) {
+                const id = btnEliminar.dataset.id;
+                if (!confirm('¿Eliminar este registro de ajedrez?')) return;
+                btnEliminar.disabled = true;
+                try {
+                    const res = await fetch('/api/ajedrez/eliminar', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({id: id})
+                    });
+                    if (res.ok) {
+                        cargarAjedrez();
+                        iniciarActualizacionAjedrez();
+                    } else {
+                        alert('Error al eliminar registro');
+                    }
+                } catch (err) {
+                    alert('Error al eliminar registro');
+                } finally {
+                    btnEliminar.disabled = false;
+                }
+                return;
+            }
+        });
+
+        // Función para cargar datos del informe
+        async function cargarInforme() {
+            const mes = document.getElementById('informe-mes')?.value;
+            const año = document.getElementById('informe-año')?.value;
+            
+            if (!mes || !año) {
+                alert('Selecciona mes y año');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`/api/informes/datos?mes=${mes}&año=${año}`);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                
+                const tbody = document.querySelector('#tabla-informes tbody');
+                if (!tbody) return;
+                
+                tbody.innerHTML = '';
+                
+                // ACERVO BIBLIOGRÁFICO
+                tbody.innerHTML += `<tr style="background:#6d1846;color:#fff;"><td colspan="3"><strong>ACERVO BIBLIOGRÁFICO</strong></td></tr>`;
+                tbody.innerHTML += `<tr><td>Existencia Total</td><td>${data.acervo.existencia_titulos}</td><td>${data.acervo.existencia_volumenes}</td></tr>`;
+                tbody.innerHTML += `<tr><td>Adquisiciones</td><td>${data.acervo.adquisiciones_titulos}</td><td>${data.acervo.adquisiciones_volumenes}</td></tr>`;
+                
+                // MATERIALES CONSULTADOS
+                tbody.innerHTML += `<tr style="background:#6d1846;color:#fff;"><td colspan="3"><strong>MATERIALES CONSULTADOS</strong></td></tr>`;
+                tbody.innerHTML += `<tr><td>En Sala</td><td>${data.materiales_consultados.sala_titulos}</td><td>${data.materiales_consultados.sala_volumenes}</td></tr>`;
+                tbody.innerHTML += `<tr><td>A Domicilio</td><td>${data.materiales_consultados.domicilio_titulos}</td><td>${data.materiales_consultados.domicilio_volumenes}</td></tr>`;
+                tbody.innerHTML += `<tr><td><strong>Total</strong></td><td><strong>${data.materiales_consultados.total_titulos}</strong></td><td><strong>${data.materiales_consultados.total_volumenes}</strong></td></tr>`;
+                
+                // Actualizar información de usuarios (con validación)
+                const elemUsuariosHombres = document.getElementById('info-usuarios-hombres');
+                const elemUsuariosMujeres = document.getElementById('info-usuarios-mujeres');
+                const elemUsuariosTotal = document.getElementById('info-usuarios-total');
+                const elemInscritosHombres = document.getElementById('info-inscritos-hombres');
+                const elemInscritosMujeres = document.getElementById('info-inscritos-mujeres');
+                const elemInscritosTotal = document.getElementById('info-inscritos-total');
+                
+                if (elemUsuariosHombres) elemUsuariosHombres.textContent = data.usuarios.atendidos_hombres;
+                if (elemUsuariosMujeres) elemUsuariosMujeres.textContent = data.usuarios.atendidos_mujeres;
+                if (elemUsuariosTotal) elemUsuariosTotal.textContent = data.usuarios.atendidos_total;
+                if (elemInscritosHombres) elemInscritosHombres.textContent = data.usuarios.inscritos_hombres;
+                if (elemInscritosMujeres) elemInscritosMujeres.textContent = data.usuarios.inscritos_mujeres;
+                if (elemInscritosTotal) elemInscritosTotal.textContent = data.usuarios.inscritos_total;
+                
+            } catch (err) {
+                console.error('Error cargar informe:', err);
+                const tbody = document.querySelector('#tabla-informes tbody');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">Error al cargar datos del informe.</td></tr>';
+            }
+        }
+        
+        // Event listeners para informes
+        document.getElementById('btn-cargar-informe')?.addEventListener('click', cargarInforme);
+        document.getElementById('btn-descargar-informe')?.addEventListener('click', function(){
+            const mes = document.getElementById('informe-mes')?.value;
+            const año = document.getElementById('informe-año')?.value;
+            
+            if (!mes || !año) {
+                alert('Selecciona mes y año');
+                return;
+            }
+            
+            window.location.href = `/api/informes/descargar?mes=${mes}&año=${año}`;
+        });
+
+        // Función para cargar multas
+        async function cargarMultas() {
+            try {
+                const res = await fetch('/api/multas');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                const tbody = document.querySelector('#tabla-multas tbody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+                const items = Array.isArray(data) ? data : (data.multas || []);
+                if (!items.length) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center" style="color:#6d1846;">No hay multas pendientes.</td></tr>';
+                    return;
+                }
+                items.forEach(it => {
+                    const nombre = it.nombre || '';
+                    const idv = it.id || '';
+                    const correo = it.correo || '';
+                    const libro = (it.libro && (it.libro.titulo || it.libro.title)) || '';
+                    const isbn = (it.libro && (it.libro.isbn)) || '';
+                    const diasRetraso = it.dias_retraso || 0;
+                    const monto = it.monto || 0;
+                    const prestamoId = it.prestamo_id || '';
+                    
+                    tbody.innerHTML += `<tr>
+                        <td>${nombre}</td>
+                        <td>${idv}</td>
+                        <td>${correo}</td>
+                        <td>${libro}</td>
+                        <td>${isbn}</td>
+                        <td>${diasRetraso}</td>
+                        <td>$${monto.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-liberar-multa" 
+                                    data-prestamo-id="${prestamoId}"
+                                    data-isbn="${isbn || ''}"
+                                    data-id="${idv || ''}"
+                                    style="background:#a67c52;color:#fff;border:1px solid #fff;padding:0.18rem 0.5rem;cursor:pointer;">Liberado</button>
+                        </td>
+                    </tr>`;
+                });
+            } catch (err) {
+                console.error('Error cargarMultas', err);
+                const tbody = document.querySelector('#tabla-multas tbody');
+                if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error al cargar multas.</td></tr>';
+            }
+        }
+
+        // Nota: Los event listeners para cargar secciones ya están en el bloque anterior
+        // Este bloque duplicado se ha eliminado para evitar conflictos
+
+        // Event listener para botones en tabla de préstamos (delegado en tbody)
+        document.querySelector('#tabla-prestamos tbody')?.addEventListener('click', async function(e){
+            // Botón eliminar (préstamos activos)
+            const btnEliminar = e.target.closest('.btn-eliminar-prestamo');
+            if (btnEliminar) {
+                await manejarEliminarPrestamo(btnEliminar);
+                return;
+            }
+            
+            // Botón liberar (préstamos vencidos)
+            const btnLiberar = e.target.closest('.btn-liberar-prestamo-vencido');
+            if (btnLiberar) {
+                await manejarLiberarPrestamoVencido(btnLiberar);
+                return;
+            }
+        });
+        
+        async function manejarEliminarPrestamo(btn) {
+            const isbn = (btn.dataset.isbn || '').trim();
+            const id = (btn.dataset.id || '').trim();
+            const fecha = (btn.dataset.fecha || '').trim();
+            const titulo = (btn.dataset.titulo || '').trim();
+            
+            if (!isbn && !id) {
+                alert('No se puede eliminar: faltan datos del préstamo (ISBN o ID)');
+                return;
+            }
+            
+            // Confirmar eliminación
+            if (!confirm('¿Estás seguro de eliminar este préstamo? El libro será devuelto al inventario y se actualizarán los contadores.')) {
+                return;
+            }
+            
+            // Deshabilitar botón mientras se procesa
+            btn.disabled = true;
+            btn.textContent = 'Eliminando...';
+            
+            try {
+                const res = await fetch('/api/eliminar_prestamo', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        isbn: isbn,
+                        id: id,
+                        fecha_inicio: fecha,
+                        libro: { isbn: isbn, titulo: titulo }
+                    })
+                });
+                
+                if (!res.ok) {
+                    throw new Error('HTTP ' + res.status);
+                }
+                
+                const data = await res.json();
+                
+                if (data && data.success) {
+                    // Actualizar dashboard
+                    try {
+                        if (data.prestamos_hoy !== undefined) setText('.card-text.fs-2[data-dashboard="prestamos"]', data.prestamos_hoy);
+                        if (data.libros_estanteria !== undefined) setText('.card-text.fs-2[data-dashboard="libros"]', data.libros_estanteria);
+                        cargarDashboard(); // recargar completo para asegurar datos actualizados
+                    } catch(e) {
+                        console.warn('Error actualizando dashboard', e);
+                    }
+                    
+                    // Recargar tabla de préstamos y devoluciones
+                    cargarPrestamos();
+                    if (typeof cargarDevoluciones === 'function') cargarDevoluciones();
+                    
+                    // Si hay tabla de inventario visible, intentar actualizar la fila con el ISBN
+                    try {
+                        if (isbn && typeof cargarInventario === 'function') {
+                            const tbodyInv = document.querySelector('#tabla-inventario tbody');
+                            if (tbodyInv) {
+                                const rows = Array.from(tbodyInv.querySelectorAll('tr'));
+                                const normIsbn = isbn.replace(/\s|-/g,'').toLowerCase();
+                                let updated = false;
+                                for (const r of rows) {
+                                    const cells = r.querySelectorAll('td');
+                                    if (cells.length < 7) continue;
+                                    const cellIsbn = String(cells[0]?.textContent || '').replace(/\s|-/g,'').toLowerCase();
+                                    if (cellIsbn === normIsbn) {
+                                        // Actualizar columna Disponibles (última columna)
+                                        if (data.incremented_disponibles !== undefined) {
+                                            cells[6].textContent = String(data.incremented_disponibles);
+                                        } else {
+                                            // Fallback: sumar 1
+                                            const cur = parseInt(String(cells[6]?.textContent || '0').replace(/\D+/g,''), 10) || 0;
+                                            cells[6].textContent = String(cur + 1);
+                                        }
+                                        updated = true;
+                                        break;
+                                    }
+                                }
+                                // Si no se encontró, recargar inventario completo
+                                if (!updated) {
+                                    setTimeout(() => cargarInventario(inventarioPaginaActual || 1), 300);
+                                }
+                            }
+                        }
+                    } catch(err) {
+                        console.warn('Error actualizando inventario en UI', err);
+                    }
+                } else {
+                    alert('Error: ' + (data?.error || 'No se pudo eliminar el préstamo'));
+                    btn.disabled = false;
+                    btn.textContent = 'Eliminar';
+                }
+            } catch (err) {
+                console.error('Error eliminar_prestamo:', err);
+                alert('Error al eliminar el préstamo. Revisa la consola (F12).');
+                btn.disabled = false;
+                btn.textContent = 'Eliminar';
+            }
+        }
+        
+        async function manejarLiberarPrestamoVencido(btn) {
+            const isbn = (btn.dataset.isbn || '').trim();
+            const id = (btn.dataset.id || '').trim();
+            const fecha = (btn.dataset.fecha || '').trim();
+            const titulo = (btn.dataset.titulo || '').trim();
+            
+            if (!isbn && !id) {
+                alert('No se puede liberar: faltan datos del préstamo (ISBN o ID)');
+                return;
+            }
+            
+            if (!confirm('¿Estás seguro de liberar este préstamo vencido? Se eliminará el préstamo, la multa asociada y el libro será devuelto al inventario.')) {
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = 'Liberando...';
+            
+            try {
+                const res = await fetch('/api/liberar_prestamo_vencido', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        isbn: isbn,
+                        id: id,
+                        fecha_inicio: fecha,
+                        libro: { isbn: isbn, titulo: titulo }
+                    })
+                });
+                
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                
+                if (data && data.success) {
+                    cargarDashboard();
+                    cargarPrestamos();
+                    cargarMultas(); // Recargar multas también
+                    if (typeof cargarDevoluciones === 'function') cargarDevoluciones();
+                    if (isbn && typeof cargarInventario === 'function') {
+                        setTimeout(() => cargarInventario(inventarioPaginaActual || 1), 300);
+                    }
+                } else {
+                    alert('Error: ' + (data?.error || 'No se pudo liberar el préstamo'));
+                    btn.disabled = false;
+                    btn.textContent = 'Liberado';
+                }
+            } catch (err) {
+                console.error('Error liberar_prestamo_vencido:', err);
+                alert('Error al liberar el préstamo. Revisa la consola (F12).');
+                btn.disabled = false;
+                btn.textContent = 'Liberado';
+            }
+        }
+        
+        // Event listener para botones en tabla de devoluciones
+        document.querySelector('#tabla-devoluciones tbody')?.addEventListener('click', async function(e){
+            // Botón eliminar (devoluciones activas)
+            const btnEliminar = e.target.closest('.btn-eliminar-devolucion');
+            if (btnEliminar) {
+                await manejarEliminarPrestamo(btnEliminar);
+                return;
+            }
+            
+            // Botón liberar (devoluciones vencidas)
+            const btnLiberar = e.target.closest('.btn-liberar-devolucion');
+            if (btnLiberar) {
+                await manejarLiberarPrestamoVencido(btnLiberar);
+                return;
+            }
+        });
+
+        // Event listener para botones liberar multa
+        document.querySelector('#tabla-multas tbody')?.addEventListener('click', async function(e){
+            const btn = e.target.closest('.btn-liberar-multa');
+            if (!btn) return;
+            
+            const prestamoId = (btn.dataset.prestamoId || '').trim();
+            const isbn = (btn.dataset.isbn || '').trim();
+            const id = (btn.dataset.id || '').trim();
+            
+            if (!prestamoId && !isbn && !id) {
+                alert('No se puede liberar: faltan datos de la multa');
+                return;
+            }
+            
+            if (!confirm('¿Estás seguro de marcar esta multa como pagada? Se eliminará el préstamo asociado y el libro será devuelto al inventario.')) {
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = 'Liberando...';
+            
+            try {
+                const res = await fetch('/api/liberar_multa', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        prestamo_id: prestamoId,
+                        isbn: isbn,
+                        id: id
+                    })
+                });
+                
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                
+                if (data && data.success) {
+                    cargarMultas();
+                    cargarPrestamos();
+                    cargarDashboard();
+                    if (typeof cargarDevoluciones === 'function') cargarDevoluciones();
+                    if (isbn && typeof cargarInventario === 'function') {
+                        setTimeout(() => cargarInventario(inventarioPaginaActual || 1), 300);
+                    }
+                } else {
+                    alert('Error: ' + (data?.error || 'No se pudo liberar la multa'));
+                    btn.disabled = false;
+                    btn.textContent = 'Liberado';
+                }
+            } catch (err) {
+                console.error('Error liberar_multa:', err);
+                alert('Error al liberar la multa. Revisa la consola (F12).');
+                btn.disabled = false;
+                btn.textContent = 'Liberado';
+            }
+        });
+
+        // initial load
+        cargarDashboard();
+        cargarProximasDevoluciones();
+    });
+
+    // --- DASHBOARD ---
+    function cargarDashboard(){
+        fetch('/api/dashboard')
+            .then(res => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(data => {
+                setText('.card-text.fs-2[data-dashboard="prestamos"]', data?.prestamos_hoy ?? 0);
+                setText('.card-text.fs-2[data-dashboard="libros"]', data?.libros_estanteria ?? 0);
+                setText('.card-text.fs-2[data-dashboard="devoluciones"]', data?.devoluciones_atrasadas ?? 0);
+                setText('.card-text.fs-2[data-dashboard="usuarios"]', data?.nuevos_usuarios ?? 0);
+            })
+            .catch(err => console.error('Error dashboard', err));
+    }
+
+    // --- PRÓXIMAS DEVOLUCIONES ---
+    function cargarProximasDevoluciones(){
+        fetch('/api/proximas_devoluciones')
+            .then(res => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(data => {
+                const lista = document.getElementById('proximas-devoluciones-lista');
+                if (!lista) return;
+                lista.innerHTML = '';
+                if (!Array.isArray(data) || !data.length) {
+                    lista.innerHTML = '<div style="font-weight:bold;">Sin devoluciones pendientes.</div>';
+                    return;
+                }
+                data.forEach(dev => {
+                    const titulo = dev.libro || dev.Titulo || dev.titulo || '';
+                    const usuario = dev.usuario || dev.Usuario || dev.usuario_nombre || '';
+                    const color = dev.color || '#6d1846';
+                    const venc = dev.vencimiento || dev.vencimiento_fecha || '';
+                    lista.innerHTML += `<div class="d-flex justify-content-between align-items-center mb-2">${titulo} - ${usuario} <span class="badge" style="background:${color};color:#fff;">${venc}</span></div>`;
+                });
+            })
+            .catch(err => console.error('Error próximas devoluciones', err));
+    }
+
+    // --- ALUMNOS (paginado) ---
+    let alumnosPaginaActual = 1, alumnosTotalPaginas = 1;
+    function cargarAlumnos(pagina = 1) {
+        fetch(`/api/alumnos?page=${pagina}`)
+            .then(res => {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(data => {
+                const tbody = document.querySelector('#tabla-alumnos tbody');
+                if (!tbody) return;
+                tbody.innerHTML = '';
+                const items = Array.isArray(data) ? data : (data.alumnos || []);
+                (items || []).forEach(item => {
+                    const nombre = item.Nombre || item.nombre || '';
+                    const boleta = item.Boleta || item.boleta || '';
+                    const correo = item.Correo || item.correo || '';
+                    const grupo = item.Grupo || item.grupo || '';
+                    const carga = item.Carga || item.carga || '';
+                    tbody.innerHTML += `<tr>
+                        <td>${nombre}</td>
+                        <td>${boleta}</td>
+                        <td>${correo}</td>
+                        <td>${grupo}</td>
+                        <td>${carga}</td>
+                        <td><button class="btn btn-sm btn-editar-alumno" data-boleta="${boleta}" style="background:#6d1846;color:#fff;border:1px solid #fff;padding:0.25rem 0.6rem;">Editar</button></td>
+                    </tr>`;
+                });
+                alumnosPaginaActual = data.page || 1;
+                alumnosTotalPaginas = Math.max(1, Math.ceil((data.total||items.length||0)/(data.page_size||50)));
+                const pageEl = document.getElementById('alumnos-pagina');
+                if (pageEl) pageEl.textContent = `Página ${alumnosPaginaActual} de ${alumnosTotalPaginas}`;
+                document.getElementById('alumnos-prev').disabled = alumnosPaginaActual <= 1;
+                document.getElementById('alumnos-next').disabled = alumnosPaginaActual >= alumnosTotalPaginas;
+            })
+            .catch(err => console.error('Error cargarAlumnos', err));
+    }
+
+    // --- INVENTARIO (paginado y filtros) ---
+    let inventarioPaginaActual = 1, inventarioTotalPaginas = 1;
+    function getInventarioFiltersFromUI(){
+        return {
+            titulo: (document.getElementById('filtro-titulo')?.value||'').trim(),
+            autor: (document.getElementById('filtro-autor')?.value||'').trim(),
+            editorial: (document.getElementById('filtro-editorial')?.value||'').trim(),
+            edicion: (document.getElementById('filtro-edicion')?.value||'').trim(),
+            estante: (document.getElementById('filtro-estante')?.value||'').trim()
+        };
+    }
+
+    function _getFirst(item, paths) {
+        for (const p of paths) {
+            const parts = p.split('.');
+            let v = item;
+            for (const k of parts) {
+                if (v == null) { v = undefined; break; }
+                v = v[k];
+            }
+            if (v !== undefined && v !== null && String(v).trim() !== '') return v;
+        }
+        return undefined;
+    }
+
+    function renderFilaInventario(item){
+        // probar muchas variantes y rutas anidadas
+        const isbn = _getFirst(item, ['ISBN','Isbn','isbn','isbn_13','identificador','id']) || '';
+        const titulo = _getFirst(item, ['Titulo','TÍTULO','TITULO','titulo','Título','title','nombre']) || '';
+        const autor = _getFirst(item, ['Autor','AUTOR','autor','author','autores']) || '';
+        const editorial = _getFirst(item, ['Editorial','EDITORIAL','editorial','editorial_nombre','publisher']) || '';
+
+        // EDICIÓN: múltiples nombres y rutas anidadas
+        let edicion = _getFirst(item, [
+            'Edicion','EDICIÓN','EDICION','edicion','Edición','edition','Edition',
+            'metadata.edicion','metadata.edition','meta.edicion','detalle.edicion','detalle.EDICION'
+        ]);
+        if (typeof edicion === 'object') edicion = undefined;
+        const edDisplay = edicion ? String(edicion) : '-';
+
+        // DISPONIBLES / STOCK: muchas variantes
+        let disponibles = _getFirst(item, [
+            'DISPONIBLES','Disponibles','disponibles','Disponible','disponible','cantidad','Cantidad','available','AVAILABLE',
+            'stock.available','stock.cantidad','stock.disponible','stock.total','copies','copias','existencias','existencia',
+            'cantidadDisponible','cantidad_disponible','cantidad_disponibles'
+        ]);
+        // si sigue undefined intentar campos numéricos dentro de objetos comunes
+        if (disponibles === undefined) {
+            if (item && typeof item === 'object') {
+                // buscar cualquier key parecida a "disp" o "stock" con valor numérico
+                for (const k of Object.keys(item)) {
+                    if (/disp|stock|copy|copi|exist/i.test(k) && (typeof item[k] === 'number' || /^\d+$/.test(String(item[k])))) {
+                        disponibles = item[k];
+                        break;
+                    }
+                }
+            }
+        }
+        disponibles = parseInt(String(disponibles || '0').replace(/\D+/g,''), 10) || 0;
+
+        // Estante
+        const estante = _getFirst(item, ['Estante','ESTANTE','estante','shelf','ubicacion','ubicación']) || '';
+
+        return `<tr>
+            <td>${isbn}</td>
+            <td>${titulo}</td>
+            <td>${autor}</td>
+            <td>${editorial}</td>
+            <td>${edDisplay}</td>
+            <td>${estante}</td>
+            <td>${disponibles}</td>
+        </tr>`;
+    }
+
+    function cargarInventario(pagina = 1){
+        const f = getInventarioFiltersFromUI();
+        const params = new URLSearchParams({
+            page: pagina,
+            page_size: 50,
+            ...(f.titulo?{titulo:f.titulo}:{}),
+            ...(f.autor?{autor:f.autor}:{}),
+            ...(f.editorial?{editorial:f.editorial}:{}),
+            ...(f.edicion?{edicion:f.edicion}:{}),
+            ...(f.estante?{estante:f.estante}:{})
+        });
+        const url = `/api/inventario?${params.toString()}`;
+        fetch(url).then(res => {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+        }).then(data => {
+            const tbody = document.querySelector('#tabla-inventario tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const items = Array.isArray(data) ? data : (data.inventario || data.items || data.data || data.results || []);
+            console.debug('cargarInventario: respuesta raw:', data);
+            console.debug('cargarInventario: inventorySample:', items && items[0]);
+
+            if (!items || !items.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="color:#6d1846;">No se encontraron registros.</td></tr>';
+            } else {
+                items.forEach(i => tbody.innerHTML += renderFilaInventario(i));
+            }
+
+            inventarioPaginaActual = data.page || data.page_number || pagina;
+            inventarioTotalPaginas = Math.max(1, Math.ceil((data.total || data.total_items || items.length)/(data.page_size || 50)));
+            const pageEl = document.getElementById('inventario-pagina');
+            if (pageEl) pageEl.textContent = `Página ${inventarioPaginaActual} de ${inventarioTotalPaginas}`;
+            document.getElementById('inventario-prev').disabled = inventarioPaginaActual <= 1;
+            document.getElementById('inventario-next').disabled = inventarioPaginaActual >= inventarioTotalPaginas;
+        }).catch(err => {
+            console.error('Error cargarInventario', err);
+            const tbody = document.querySelector('#tabla-inventario tbody');
+            if (tbody) tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error al cargar inventario. Revisa la consola.</td></tr>';
+        });
+    }
+
+    // --- DOCENTES (async, with fallback URLs) ---
+    async function cargarDocentes() {
+        const tbody = document.querySelector('#tabla-docentes tbody');
+        if (!tbody) return console.warn('No existe #tabla-docentes tbody en DOM');
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">Cargando docentes...</td></tr>';
+
+        const urls = ['/api/docentes', 'http://localhost:5000/api/docentes'];
+        let lastError = null;
+        let res = null;
+        for (const u of urls) {
+            try {
+                res = await fetch(u, {cache: 'no-store'});
+                if (!res.ok) {
+                    lastError = new Error('HTTP ' + res.status + ' ' + u);
+                    continue;
+                }
+                break;
+            } catch (err) {
+                lastError = err;
+            }
+        }
+
+        if (!res || !res.ok) {
+            console.error('No se pudo obtener /api/docentes:', lastError);
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error al cargar docentes. Revisa la consola (F12).</td></tr>';
+            return;
+        }
+
+        try {
+            const data = await res.json();
+            const items = Array.isArray(data) ? data : (data.docentes || data.data || []);
+            if (!items || !items.length) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">No hay docentes registrados.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = '';
+            items.forEach(item => {
+                tbody.innerHTML += `<tr><td>${item.Nombre || item.nombre || ''}</td><td>${item.NoEmpleado || item.no_empleado || item.noEmpleado || ''}</td><td>${item.Correo || item.correo || ''}</td><td>${item.Turno || item.turno || ''}</td><td>${item.Ocupacion || item.ocupacion || item.Cargo || ''}</td></tr>`;
+            });
+        } catch (err) {
+            console.error('Error procesando respuesta docentes:', err);
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Respuesta inválida del servidor.</td></tr>';
+        }
+    }
+
+})();
+</script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function(){
+        // elimina cualquier hash al cargar
+        function stripHash() {
+            if (location.hash && location.hash.length > 0) {
+                const clean = location.pathname + location.search;
+                history.replaceState(null, '', clean);
+            }
+        }
+        stripHash();
+
+        // si por alguna razón cambia el hash (pushState/links), lo quitamos
+        window.addEventListener('hashchange', function(){ stripHash(); });
+
+        // prevenir anchors que sólo añaden '#' o '#...' y evitar que el navegador agregue hash
+        document.body.addEventListener('click', function(e){
+            const a = e.target.closest && e.target.closest('a[href]');
+            if (!a) return;
+            const href = a.getAttribute('href')?.trim();
+            if (!href) return;
+            if (href === '#' || href === '#!' || href === '#0' || href.startsWith('#')) {
+                e.preventDefault();
+                a.blur();
+                // limpiar url si se añadió hash
+                stripHash();
+            }
+        }, true);
+    });
+    </script>
+</body>
+</html>
