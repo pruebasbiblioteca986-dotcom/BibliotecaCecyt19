@@ -38,9 +38,10 @@ except FileNotFoundError:
 app = Flask(__name__)
 CORS(app)
 
+import os
 mongo_url = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/")
 client = MongoClient(mongo_url)
-db = client["Cluster0"]
+db = client["Cluster0"]  # O el nombre de tu base
 inventario = db["Inventario"]
 alumnos = db["Alumnos"]
 prestamos = db["Prestamos"]
