@@ -38,7 +38,8 @@ except FileNotFoundError:
 app = Flask(__name__)
 CORS(app)
 
-client = MongoClient("mongodb://localhost:27017/")
+mongo_url = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/")
+client = MongoClient(mongo_url)
 db = client["Biblioteca"]
 inventario = db["Inventario"]
 alumnos = db["Alumnos"]
