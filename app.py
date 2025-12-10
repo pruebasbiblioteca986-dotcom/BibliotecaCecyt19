@@ -1,12 +1,3 @@
-"""
-Cambio de prueba para commit y push en la rama Nueva_Biblioteca del repo pruebasbiblioteca986-dotcom/BibliotecaCecyt19.git
-"""
-    
-    
-    
-    
-    
-    
 from flask import Flask, send_file, jsonify, request, render_template_string
 from flask_cors import CORS
 from pymongo import MongoClient
@@ -38,10 +29,9 @@ except FileNotFoundError:
 app = Flask(__name__)
 CORS(app)
 
-import os
-mongo_url = os.environ.get("MONGODB_URI", "mongodb://localhost:27017/")
+mongo_url = os.environ.get("MONGODB_URI")
 client = MongoClient(mongo_url)
-db = client["Cluster0"]  # O el nombre de tu base
+db = client["Biblioteca"]
 inventario = db["Inventario"]
 alumnos = db["Alumnos"]
 prestamos = db["Prestamos"]
