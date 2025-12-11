@@ -1,3 +1,4 @@
+
 from flask import Flask, send_file, jsonify, request, render_template_string
 from flask_cors import CORS
 from pymongo import MongoClient
@@ -361,7 +362,6 @@ def registrar_docente():
 def index():
     """Ruta raíz que sirve la interfaz principal"""
     return send_file('Interfaz.html')
-
 
 @app.route('/api/buscar')
 def buscar_json():
@@ -945,6 +945,78 @@ def registrar_entrada_docente():
         </html>
     ''', fecha=fecha_str, hora_entrada=hora_entrada)
 
+# Funciones helper para préstamos y devoluciones
+def count_business_days_between(start_date, end_date):
+    """Calcula días hábiles entre dos fechas (excluyendo sábados y domingos)"""
+    if start_date > end_date:
+        return 0
+    count = 0
+    current = start_date
+    while current <= end_date:
+        # 0 = lunes, 6 = domingo
+        if current.weekday() < 5:  # Lunes a viernes
+            count += 1
+        current += timedelta(days=1)
+    return count
+
+def calcular_dias_retraso(fecha_devolucion):
+    """Calcula los días de retraso desde la fecha de devolución hasta hoy (solo días hábiles)"""
+    tz_mexico = pytz.timezone('America/Mexico_City')
+    hoy = datetime.now(tz_mexico).date()
+    if fecha_devolucion >= hoy:
+        return 0
+    return count_business_days_between(fecha_devolucion, hoy)
+
+def calcular_multa(dias_retraso):
+    """Calcula el monto de la multa basado en días de retraso"""
+    # $5 pesos por día hábil de retraso
+    return dias_retraso * 5
+
+def verificar_y_actualizar_prestamos_vencidos():
+    """Verifica y actualiza el estado de préstamos vencidos"""
+    tz_mexico = pytz.timezone('America/Mexico_City')
+    hoy = datetime.now(tz_mexico).date()
+    
+    # Buscar préstamos activos que hayan vencido
+    for prestamo in prestamos.find({"estado": {"$in": ["Activo", None]}}):
+        fecha_dev_str = prestamo.get("fecha_devolucion", "")
+        if not fecha_dev_str:
+            continue
+        
+        try:
+            fecha_dev = datetime.strptime(fecha_dev_str, "%Y-%m-%d").date()
+            if fecha_dev < hoy:
+                # Actualizar estado a "Vencido"
+                prestamos.update_one(
+                    {"_id": prestamo["_id"]},
+                    {"$set": {"estado": "Vencido"}}
+                )
+        except Exception:
+            continue
+
+@app.route('/api/prestamos', methods=['GET'])
+def api_prestamos():
+    """Lista todos los préstamos"""
+    items = []
+    for doc in prestamos.find({}, {"_id": 0}).sort("created_at", -1):
+        libro = doc.get("libro", {})
+        items.append({
+            "tipo": doc.get("tipo", ""),
+            "nombre": doc.get("nombre", ""),
+            "id": doc.get("id", ""),
+            "grupo": doc.get("grupo", ""),
+            "correo": doc.get("correo", ""),
+            "libro": {
+                "titulo": libro.get("titulo", "") or doc.get("titulo", ""),
+                "isbn": libro.get("isbn", "") or doc.get("ISBN", "")
+            },
+            "fecha_inicio": doc.get("fecha_inicio", ""),
+            "fecha_devolucion": doc.get("fecha_devolucion", ""),
+            "estado": doc.get("estado", "Activo"),
+            "created_at": doc.get("created_at", "").isoformat() if doc.get("created_at") else ""
+        })
+    return jsonify({"prestamos": items})
+
 @app.route('/api/dashboard')
 def get_dashboard():
     import re
@@ -1129,3 +1201,328 @@ def api_devoluciones():
         })
     
     return jsonify({"devoluciones": items})
+
+# ========== RUTAS PARA SITIO (Registro de entrada) ==========
+@app.route('/api/sitio', methods=['GET'])
+def api_sitio():
+    """Lista todos los registros de entrada al sitio"""
+    items = []
+    tz_mexico = pytz.timezone('America/Mexico_City')
+    hoy = datetime.now(tz_mexico).date()
+    
+    for doc in sitio.find({"eliminado": False}, {"_id": 1}).sort("created_at", -1):
+        # Convertir _id a string para JSON
+        doc_id = str(doc["_id"])
+        registro = sitio.find_one({"_id": doc["_id"]}, {"_id": 0})
+        if registro:
+            registro["id"] = doc_id
+            items.append(registro)
+    
+    return jsonify({"registros": items})
+
+@app.route('/api/sitio/eliminar', methods=['POST'])
+def api_sitio_eliminar():
+    """Elimina un registro del sitio (marca como eliminado)"""
+    datos = request.get_json() or {}
+    id_registro = datos.get('id', '')
+    if not id_registro:
+        return jsonify({'success': False, 'error': 'ID requerido'}), 400
+    try:
+        result = sitio.update_one(
+            {'_id': ObjectId(id_registro)},
+            {'$set': {'eliminado': True}}
+        )
+        if result.modified_count > 0:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Registro no encontrado'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/sitio/reiniciar-contador', methods=['POST'])
+def api_sitio_reiniciar_contador():
+    """Reinicia el contador de un registro del sitio"""
+    datos = request.get_json() or {}
+    id_registro = datos.get('id', '')
+    if not id_registro:
+        return jsonify({'success': False, 'error': 'ID requerido'}), 400
+    try:
+        tz_mexico = pytz.timezone('America/Mexico_City')
+        fecha = datetime.now(tz_mexico)
+        fecha_str = fecha.strftime('%Y-%m-%d')
+        hora_entrada = fecha.strftime('%H:%M:%S')
+        
+        result = sitio.update_one(
+            {'_id': ObjectId(id_registro)},
+            {'$set': {
+                'reiniciado': True,
+                'fecha': fecha_str,
+                'fecha_completa': fecha,
+                'hora_entrada': hora_entrada,
+                'created_at': fecha
+            }}
+        )
+        if result.modified_count > 0:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Registro no encontrado'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/registrar_observacion', methods=['POST'])
+def registrar_observacion():
+    """Agrega una observación a un registro de entrada"""
+    tipo = request.form.get('tipo', '')
+    nombre = request.form.get('nombre', '')
+    boleta = request.form.get('boleta', '')
+    no_empleado = request.form.get('no_empleado', '')
+    observacion = request.form.get('observacion', '').strip()
+    
+    if not observacion:
+        return jsonify({'success': False, 'error': 'Observación requerida'}), 400
+    
+    try:
+        tz_mexico = pytz.timezone('America/Mexico_City')
+        fecha = datetime.now(tz_mexico)
+        
+        query = {}
+        if tipo == 'alumno' and boleta:
+            query = {"tipo": "alumno", "boleta": boleta, "eliminado": False}
+        elif tipo == 'docente' and no_empleado:
+            query = {"tipo": "docente", "no_empleado": no_empleado, "eliminado": False}
+        else:
+            return jsonify({'success': False, 'error': 'Datos insuficientes'}), 400
+        
+        # Buscar el registro más reciente
+        registro = sitio.find_one(query, sort=[("created_at", -1)])
+        if registro:
+            sitio.update_one(
+                {'_id': registro['_id']},
+                {'$push': {'observaciones': {
+                    'texto': observacion,
+                    'fecha': fecha.strftime('%Y-%m-%d %H:%M:%S')
+                }}}
+            )
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Registro no encontrado'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ========== RUTAS PARA AJEDREZ ==========
+@app.route('/api/ajedrez', methods=['GET'])
+def api_ajedrez():
+    """Lista todos los registros de ajedrez"""
+    items = []
+    for doc in ajedrez.find({}, {"_id": 0}).sort("created_at", -1):
+        items.append(doc)
+    return jsonify({"registros": items})
+
+@app.route('/api/ajedrez/buscar_usuario', methods=['GET'])
+def api_ajedrez_buscar_usuario():
+    """Busca un usuario en los registros de ajedrez"""
+    usuario_id = request.args.get('id', '').strip()
+    tipo = request.args.get('tipo', '').strip()
+    
+    if not usuario_id or not tipo:
+        return jsonify({"encontrado": False})
+    
+    query = {"id_usuario": usuario_id, "tipo": tipo, "estado": "activo"}
+    registro = ajedrez.find_one(query, {"_id": 0})
+    
+    if registro:
+        return jsonify({"encontrado": True, "registro": registro})
+    else:
+        return jsonify({"encontrado": False})
+
+@app.route('/api/ajedrez/iniciar', methods=['POST'])
+def api_ajedrez_iniciar():
+    """Inicia un juego de ajedrez"""
+    datos = request.get_json() or {}
+    id_usuario = datos.get('id_usuario', '')
+    nombre = datos.get('nombre', '')
+    tipo = datos.get('tipo', '')
+    
+    if not id_usuario or not nombre or not tipo:
+        return jsonify({'success': False, 'error': 'Datos incompletos'}), 400
+    
+    try:
+        tz_mexico = pytz.timezone('America/Mexico_City')
+        fecha = datetime.now(tz_mexico)
+        
+        registro = {
+            "id_usuario": id_usuario,
+            "nombre": nombre,
+            "tipo": tipo,
+            "estado": "activo",
+            "inicio": fecha,
+            "created_at": fecha
+        }
+        ajedrez.insert_one(registro)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ajedrez/terminar', methods=['POST'])
+def api_ajedrez_terminar():
+    """Termina un juego de ajedrez"""
+    datos = request.get_json() or {}
+    id_usuario = datos.get('id_usuario', '')
+    tipo = datos.get('tipo', '')
+    
+    if not id_usuario or not tipo:
+        return jsonify({'success': False, 'error': 'Datos incompletos'}), 400
+    
+    try:
+        tz_mexico = pytz.timezone('America/Mexico_City')
+        fecha = datetime.now(tz_mexico)
+        
+        result = ajedrez.update_one(
+            {"id_usuario": id_usuario, "tipo": tipo, "estado": "activo"},
+            {"$set": {
+                "estado": "terminado",
+                "fin": fecha,
+                "updated_at": fecha
+            }}
+        )
+        if result.modified_count > 0:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Registro no encontrado'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ajedrez/reiniciar', methods=['POST'])
+def api_ajedrez_reiniciar():
+    """Reinicia un juego de ajedrez"""
+    datos = request.get_json() or {}
+    id_usuario = datos.get('id_usuario', '')
+    tipo = datos.get('tipo', '')
+    
+    if not id_usuario or not tipo:
+        return jsonify({'success': False, 'error': 'Datos incompletos'}), 400
+    
+    try:
+        tz_mexico = pytz.timezone('America/Mexico_City')
+        fecha = datetime.now(tz_mexico)
+        
+        result = ajedrez.update_one(
+            {"id_usuario": id_usuario, "tipo": tipo},
+            {"$set": {
+                "estado": "activo",
+                "inicio": fecha,
+                "updated_at": fecha
+            }}
+        )
+        if result.modified_count > 0:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Registro no encontrado'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/ajedrez/eliminar', methods=['POST'])
+def api_ajedrez_eliminar():
+    """Elimina un registro de ajedrez"""
+    datos = request.get_json() or {}
+    id_registro = datos.get('id', '')
+    if not id_registro:
+        return jsonify({'success': False, 'error': 'ID requerido'}), 400
+    try:
+        result = ajedrez.delete_one({'_id': ObjectId(id_registro)})
+        if result.deleted_count > 0:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Registro no encontrado'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ========== RUTAS PARA MULTAS ==========
+@app.route('/api/multas', methods=['GET'])
+def api_multas():
+    """Lista todas las multas pendientes"""
+    items = []
+    for doc in multas.find({"pagada": False}, {"_id": 0}).sort("fecha_creacion", -1):
+        items.append(doc)
+    return jsonify({"multas": items})
+
+@app.route('/api/liberar_multa', methods=['POST'])
+def api_liberar_multa():
+    """Marca una multa como pagada"""
+    datos = request.get_json() or {}
+    id_multa = datos.get('id', '')
+    if not id_multa:
+        return jsonify({'success': False, 'error': 'ID requerido'}), 400
+    try:
+        tz_mexico = pytz.timezone('America/Mexico_City')
+        fecha = datetime.now(tz_mexico)
+        
+        result = multas.update_one(
+            {'_id': ObjectId(id_multa)},
+            {'$set': {
+                'pagada': True,
+                'fecha_pago': fecha.strftime('%Y-%m-%d')
+            }}
+        )
+        if result.modified_count > 0:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Multa no encontrada'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+# ========== RUTAS PARA PRÉSTAMOS ==========
+@app.route('/api/registrar_prestamo', methods=['POST'])
+def api_registrar_prestamo():
+    """Registra un nuevo préstamo"""
+    datos = request.get_json() or {}
+    
+    tipo = datos.get('tipo', '')
+    nombre = datos.get('nombre', '')
+    id_usuario = datos.get('id', '')
+    grupo = datos.get('grupo', '')
+    correo = datos.get('correo', '')
+    libro_titulo = datos.get('libro_titulo', '')
+    libro_isbn = datos.get('libro_isbn', '')
+    dias_prestamo = int(datos.get('dias_prestamo', 7))
+    
+    if not tipo or not nombre or not libro_titulo:
+        return jsonify({'success': False, 'error': 'Datos incompletos'}), 400
+    
+    try:
+        tz_mexico = pytz.timezone('America/Mexico_City')
+        fecha_inicio = datetime.now(tz_mexico).date()
+        fecha_devolucion = fecha_inicio + timedelta(days=dias_prestamo)
+        
+        # Ajustar fecha de devolución para que sea día hábil
+        while fecha_devolucion.weekday() >= 5:  # Si es sábado o domingo
+            fecha_devolucion += timedelta(days=1)
+        
+        prestamo = {
+            "tipo": tipo,
+            "nombre": nombre,
+            "id": id_usuario,
+            "grupo": grupo,
+            "correo": correo,
+            "libro": {
+                "titulo": libro_titulo,
+                "isbn": libro_isbn
+            },
+            "fecha_inicio": fecha_inicio.strftime('%Y-%m-%d'),
+            "fecha_devolucion": fecha_devolucion.strftime('%Y-%m-%d'),
+            "estado": "Activo",
+            "created_at": datetime.now(tz_mexico)
+        }
+        
+        prestamos.insert_one(prestamo)
+        
+        # Reducir disponibles en inventario
+        if libro_isbn:
+            inventario.update_one(
+                {"ISBN": libro_isbn},
+                {"$inc": {"DISPONIBLES": -1}}
+            )
+        
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
