@@ -368,7 +368,7 @@ def registrar_docente():
 
 
 @app.route('/api/buscar')
-def buscar():
+def buscar_json():
     q = request.args.get('q', '').strip()
     if not q:
         return jsonify({"libros": [], "alumnos": []})
@@ -1087,7 +1087,7 @@ def proximas_devoluciones():
 
 
 @app.route('/api/buscar')
-def buscar():
+def buscar_json2():
     q = request.args.get('q', '').strip()
     if not q:
         return jsonify({"libros": [], "alumnos": []})
