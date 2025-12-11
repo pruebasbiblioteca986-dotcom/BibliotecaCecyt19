@@ -366,54 +366,6 @@ def registrar_docente():
 
 
 
-@app.route('/api/devoluciones', methods=['GET'])
-def api_devoluciones():
-    """Lista todas las devoluciones pendientes (préstamos activos y vencidos)"""
-    # Verificar y actualizar préstamos vencidos antes de listar
-    verificar_y_actualizar_prestamos_vencidos()
-    
-    items = []
-    tz_mexico = pytz.timezone('America/Mexico_City')
-    hoy = datetime.now(tz_mexico).date()
-    
-    # Obtener todos los préstamos activos y vencidos (no devueltos)
-    for doc in prestamos.find({"estado": {"$ne": "Devuelto"}}, {"_id": 0}).sort("fecha_devolucion", 1):
-        fecha_dev_str = doc.get("fecha_devolucion", "")
-        estado = doc.get("estado", "")
-        
-        # Calcular días de retraso si está vencido
-        dias_retraso = 0
-        if fecha_dev_str:
-            try:
-                fecha_dev = datetime.strptime(fecha_dev_str, "%Y-%m-%d").date()
-                if fecha_dev < hoy:
-                    dias_retraso = calcular_dias_retraso(fecha_dev)
-                    if estado != "Vencido":
-                        estado = "Vencido"
-                elif estado != "Vencido":
-                    estado = "Activo"
-            except Exception:
-                estado = estado or "Activo"
-        
-        libro = doc.get("libro", {})
-        items.append({
-            "tipo": doc.get("tipo", ""),
-            "nombre": doc.get("nombre", ""),
-            "id": doc.get("id", ""),
-            "grupo": doc.get("grupo", ""),
-            "correo": doc.get("correo", ""),
-            "libro": {
-                "titulo": libro.get("titulo", "") or doc.get("titulo", ""),
-                "isbn": libro.get("isbn", "") or doc.get("ISBN", "")
-            },
-            "fecha_inicio": doc.get("fecha_inicio", ""),
-            "fecha_devolucion": fecha_dev_str,
-            "estado": estado,
-            "dias_retraso": dias_retraso,
-            "monto_multa": calcular_multa(dias_retraso) if dias_retraso > 0 else 0
-        })
-    
-    return jsonify({"devoluciones": items})
 
 @app.route('/api/buscar')
 def buscar():
@@ -1133,54 +1085,6 @@ def proximas_devoluciones():
     
     return jsonify(items)
 
-@app.route('/api/devoluciones', methods=['GET'])
-def api_devoluciones():
-    """Lista todas las devoluciones pendientes (préstamos activos y vencidos)"""
-    # Verificar y actualizar préstamos vencidos antes de listar
-    verificar_y_actualizar_prestamos_vencidos()
-    
-    items = []
-    tz_mexico = pytz.timezone('America/Mexico_City')
-    hoy = datetime.now(tz_mexico).date()
-    
-    # Obtener todos los préstamos activos y vencidos (no devueltos)
-    for doc in prestamos.find({"estado": {"$ne": "Devuelto"}}, {"_id": 0}).sort("fecha_devolucion", 1):
-        fecha_dev_str = doc.get("fecha_devolucion", "")
-        estado = doc.get("estado", "")
-        
-        # Calcular días de retraso si está vencido
-        dias_retraso = 0
-        if fecha_dev_str:
-            try:
-                fecha_dev = datetime.strptime(fecha_dev_str, "%Y-%m-%d").date()
-                if fecha_dev < hoy:
-                    dias_retraso = calcular_dias_retraso(fecha_dev)
-                    if estado != "Vencido":
-                        estado = "Vencido"
-                elif estado != "Vencido":
-                    estado = "Activo"
-            except Exception:
-                estado = estado or "Activo"
-        
-        libro = doc.get("libro", {})
-        items.append({
-            "tipo": doc.get("tipo", ""),
-            "nombre": doc.get("nombre", ""),
-            "id": doc.get("id", ""),
-            "grupo": doc.get("grupo", ""),
-            "correo": doc.get("correo", ""),
-            "libro": {
-                "titulo": libro.get("titulo", "") or doc.get("titulo", ""),
-                "isbn": libro.get("isbn", "") or doc.get("ISBN", "")
-            },
-            "fecha_inicio": doc.get("fecha_inicio", ""),
-            "fecha_devolucion": fecha_dev_str,
-            "estado": estado,
-            "dias_retraso": dias_retraso,
-            "monto_multa": calcular_multa(dias_retraso) if dias_retraso > 0 else 0
-        })
-    
-    return jsonify({"devoluciones": items})
 
 @app.route('/api/buscar')
 def buscar():
