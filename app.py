@@ -365,47 +365,6 @@ def registrar_docente():
         return jsonify({"success": False, "error": str(e)})
 
 
-@app.route('/api/proximas_devoluciones')
-def proximas_devoluciones():
-    """Devuelve las próximas devoluciones (préstamos activos próximos a vencer)"""
-    tz_mexico = pytz.timezone('America/Mexico_City')
-    hoy = datetime.now(tz_mexico).date()
-    items = []
-    
-    # Obtener préstamos activos ordenados por fecha de devolución
-    for doc in prestamos.find({"estado": "Activo"}, {"_id": 0}).sort("fecha_devolucion", 1).limit(10):
-        fecha_dev_str = doc.get("fecha_devolucion", "")
-        if not fecha_dev_str:
-            continue
-        
-        try:
-            fecha_dev = datetime.strptime(fecha_dev_str, "%Y-%m-%d").date()
-            dias_restantes = count_business_days_between(hoy, fecha_dev)
-            
-            # Solo mostrar los próximos 5 días
-            if dias_restantes <= 5:
-                libro_titulo = doc.get("libro", {}).get("titulo", "") or doc.get("titulo", "")
-                nombre_usuario = doc.get("nombre", "")
-                
-                # Color según días restantes
-                if dias_restantes == 0:
-                    color = "#dc3545"  # Rojo - hoy
-                elif dias_restantes == 1:
-                    color = "#ffc107"  # Amarillo - mañana
-                else:
-                    color = "#6d1846"  # Vino - normal
-                
-                items.append({
-                    "libro": libro_titulo,
-                    "usuario": nombre_usuario,
-                    "vencimiento": fecha_dev_str,
-                    "dias_restantes": dias_restantes,
-                    "color": color
-                })
-        except Exception:
-            continue
-    
-    return jsonify(items)
 
 @app.route('/api/devoluciones', methods=['GET'])
 def api_devoluciones():
