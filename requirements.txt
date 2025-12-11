@@ -8,5 +8,6 @@ xlrd==2.0.2
 pytz==2023.3
 gunicorn
 python-dotenv
+sendgrid
 
 
