@@ -1,4 +1,3 @@
-
 from flask import Flask, send_file, jsonify, request, render_template_string
 from flask_cors import CORS
 from pymongo import MongoClient
@@ -356,6 +355,12 @@ def registrar_docente():
         return jsonify({"success": False, "error": str(e)})
 
 
+
+
+@app.route('/')
+def index():
+    """Ruta raíz que sirve la interfaz principal"""
+    return send_file('Interfaz.html')
 
 
 @app.route('/api/buscar')
