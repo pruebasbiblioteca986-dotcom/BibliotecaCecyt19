@@ -4,11 +4,11 @@ from pymongo import MongoClient
 from unidecode import unidecode
 from datetime import datetime, timedelta, timezone
 from bson.objectid import ObjectId
-import smtplib
 import threading
 import time
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+# Importar SendGrid
+import sendgrid
+from sendgrid.helpers.mail import Mail
 import os
 import pandas as pd
 from io import BytesIO
@@ -40,26 +40,11 @@ devoluciones = db["Devoluciones"]  # Colección para devoluciones
 sitio = db["Sitio"]  # Colección para registros de entrada al sitio
 ajedrez = db["Ajedrez"]  # Colección para contadores de ajedrez
 
-# Configuración de correo (ajustar según tu servidor SMTP)
-# MODO PRUEBA: Para pruebas rápidas, usa Gmail pero envía a los correos reales de los usuarios
+# Configuración de correo usando SendGrid
 MODO_PRUEBA = os.getenv('MODO_PRUEBA', 'true').lower() == 'true'  # Cambia a 'false' para producción
 CORREO_PRUEBA = os.getenv('CORREO_PRUEBA', '')  # Opcional: si está configurado, redirige todos los correos aquí (para pruebas controladas)
-
-# Configuración SMTP
-if MODO_PRUEBA:
-    # Configuración para Gmail (más fácil para pruebas)
-    SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
-    SMTP_PORT = int(os.getenv('SMTP_PORT', '587'))
-    SMTP_USER = os.getenv('SMTP_USER', '')  # Tu correo Gmail
-    SMTP_PASSWORD = os.getenv('SMTP_PASSWORD', '')  # Contraseña de aplicación de Gmail
-    EMAIL_FROM = os.getenv('EMAIL_FROM', SMTP_USER)  # Usa el mismo correo
-else:
-    # Configuración para producción (IPN)
-    SMTP_SERVER = os.getenv('SMTP_SERVER', 'smtp.office365.com')
-    SMTP_PORT = int(os.getenv('SMTP_PORT', '587'))
-    SMTP_USER = os.getenv('SMTP_USER', 'bibliotecacecyt19@ipn.com.mx')
-    SMTP_PASSWORD = os.getenv('SMTP_PASSWORD', '')
-    EMAIL_FROM = os.getenv('EMAIL_FROM', 'bibliotecacecyt19@ipn.com.mx')
+SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY', '')
+EMAIL_FROM = os.getenv('EMAIL_FROM', 'bibliotecacecyt19@ipn.com.mx')
 
 def obtener_disponibles(doc):
     u = doc.get("U")
@@ -1333,7 +1318,7 @@ def calcular_multa(dias_retraso):
     return round(dias_retraso * 7.50, 2)
 
 def enviar_correo(destinatario, asunto, cuerpo):
-    """Envía un correo electrónico al destinatario"""
+    """Envía un correo electrónico al destinatario usando SendGrid"""
     # Validar que el destinatario tenga correo
     if not destinatario or not destinatario.strip():
         return False
@@ -1351,40 +1336,29 @@ def enviar_correo(destinatario, asunto, cuerpo):
         # Modo prueba pero sin redirección: enviar a correo real del usuario
         print(f"[EMAIL] 🧪 MODO PRUEBA: Enviando correo real a {destinatario}")
     
-    # Validar configuración SMTP
-    if not SMTP_USER or not SMTP_PASSWORD:
-        print(f"[EMAIL] ⚠️ Correos no configurados. Crea un archivo .env con:")
-        print(f"[EMAIL]    SMTP_USER=tu_correo@gmail.com")
-        print(f"[EMAIL]    SMTP_PASSWORD=tu_contraseña_de_aplicacion")
-        print(f"[EMAIL]    CORREO_PRUEBA=tu_correo@gmail.com")
+    # Validar configuración SendGrid
+    if not SENDGRID_API_KEY or not SENDGRID_API_KEY.strip():
+        print(f"[EMAIL] ⚠️ SendGrid no configurado. Crea un archivo .env con:")
+        print(f"[EMAIL]    SENDGRID_API_KEY=tu_api_key_de_sendgrid")
+        print(f"[EMAIL]    EMAIL_FROM=tu_correo@dominio.com")
+        print(f"[EMAIL]    CORREO_PRUEBA=tu_correo@gmail.com (opcional)")
         print(f"[EMAIL]    Ver CONFIGURAR_CORREOS.md para más detalles")
         return False
     
     try:
-        msg = MIMEMultipart()
-        msg['From'] = EMAIL_FROM
-        msg['To'] = destinatario.strip()
-        msg['Subject'] = asunto
-        msg.attach(MIMEText(cuerpo, 'plain', 'utf-8'))
-        
-        # Conectar al servidor SMTP
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()  # Habilitar TLS
-        server.login(SMTP_USER, SMTP_PASSWORD)
-        server.send_message(msg)
-        server.quit()
-        print(f"[EMAIL] ✅ Correo enviado exitosamente a {destinatario}: {asunto}")
+        sg = sendgrid.SendGridAPIClient(api_key=SENDGRID_API_KEY)
+        mail = Mail(
+            from_email=EMAIL_FROM,
+            to_emails=destinatario.strip(),
+            subject=asunto,
+            plain_text_content=cuerpo
+        )
+        response = sg.send(mail)
+        print(f"[EMAIL] ✅ Correo enviado exitosamente a {destinatario}: {asunto} (Status: {response.status_code})")
         return True
-    except smtplib.SMTPAuthenticationError as e:
-        print(f"[EMAIL] ❌ Error de autenticación: {e}")
-        print(f"[EMAIL] Verifica tu contraseña de aplicación en el archivo .env")
-        print(f"[EMAIL] Ver CONFIGURAR_CORREOS.md para instrucciones")
-        return False
-    except smtplib.SMTPException as e:
-        print(f"[EMAIL] ❌ Error SMTP: {e}")
-        return False
     except Exception as e:
         print(f"[EMAIL] ❌ Error enviando correo a {destinatario}: {e}")
+        print(f"[EMAIL] Verifica tu API key de SendGrid en el archivo .env")
         return False
 
 def verificar_y_actualizar_prestamos_vencidos():
