@@ -329,9 +329,41 @@ def registrar_docente():
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})
 
+
+# helper para extraer primer número entero válido de un valor (string, doc, list, etc.)
+def extract_number(v):
+    import re
+    if v is None:
+        return None
+    if isinstance(v, (int, float)):
+        try:
+            return int(v)
+        except:
+            return None
+    if isinstance(v, str):
+        s = re.sub(r'[^0-9]', '', v)
+        return int(s) if s else None
+    if isinstance(v, dict):
+        # intenta claves comunes primero
+        for k in ("DISPONIBLES","Disponibles","disponible","DISPONIBLE","Disponible","EXIST"):
+            if k in v:
+                n = extract_number(v[k])
+                if n is not None:
+                    return n
+        # luego recorre valores
+        for val in v.values():
+            n = extract_number(val)
+            if n is not None:
+                return n
+    if isinstance(v, (list, tuple)):
+        for item in v:
+            n = extract_number(item)
+            if n is not None:
+                return n
+    return None
+
 @app.route('/api/dashboard')
 def get_dashboard():
-    import re
     # rango del día de hoy en UTC
     start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
     end = start + timedelta(days=1)
@@ -339,37 +371,6 @@ def get_dashboard():
         prestamos_hoy = prestamos.count_documents({"created_at": {"$gte": start, "$lt": end}})
     except Exception:
         prestamos_hoy = 0
-
-    # helper para extraer primer número entero válido de un valor (string, doc, list, etc.)
-    def extract_number(v):
-        if v is None:
-            return None
-        if isinstance(v, (int, float)):
-            try:
-                return int(v)
-            except:
-                return None
-        if isinstance(v, str):
-            s = re.sub(r'[^0-9]', '', v)
-            return int(s) if s else None
-        if isinstance(v, dict):
-            # intenta claves comunes primero
-            for k in ("DISPONIBLES","Disponibles","disponible","DISPONIBLE","Disponible","EXIST"):
-                if k in v:
-                    n = extract_number(v[k])
-                    if n is not None:
-                        return n
-            # luego recorre valores
-            for val in v.values():
-                n = extract_number(val)
-                if n is not None:
-                    return n
-        if isinstance(v, (list, tuple)):
-            for item in v:
-                n = extract_number(item)
-                if n is not None:
-                    return n
-        return None
 
     # libros en estantería: sumar DISPONIBLES en inventario (con varios fallbacks)
     libros_en_estanteria = 0
